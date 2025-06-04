@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑图书 - 个人图书管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">编辑图书</h1>
+        
+        <form action="/edit/{{ book[0] }}" method="post">
+            <div class="mb-3">
+                <label for="title" class="form-label">书名 *</label>
+                <input type="text" class="form-control" id="title" name="title" value="{{ book[1] }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="author" class="form-label">作者 *</label>
+                <input type="text" class="form-control" id="author" name="author" value="{{ book[2] }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="description" class="form-label">简介</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ book[3] or '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="publish_date" class="form-label">出版日期</label>
+                <input type="date" class="form-control" id="publish_date" name="publish_date" value="{{ book[4] or '' }}">
+            </div>
+            
+            <div class="mb-3">
+                <label for="original_price" class="form-label">发行价格</label>
+                <input type="number" class="form-control" id="original_price" name="original_price" value="{{ book[5] or '' }}" step="0.01">
+            </div>
+            
+            <div class="mb-3">
+                <label for="purchase_price" class="form-label">购买价格</label>
+                <input type="number" class="form-control" id="purchase_price" name="purchase_price" value="{{ book[6] or '' }}" step="0.01">
+            </div>
+            
+            <div class="mb-3">
+                <label for="user_notes" class="form-label">用户备注</label>
+                <textarea class="form-control" id="user_notes" name="user_notes" rows="3">{{ book[7] or '' }}</textarea>
+            </div>
+            
+            <div class="mb-3">
+                <label for="reading_status" class="form-label">阅读状态</label>
+                <select class="form-select" id="reading_status" name="reading_status">
+                    <option value="待读" {% if book[8] == '待读' %}selected{% endif %}>待读</option>
+                    <option value="已读" {% if book[8] == '已读' %}selected{% endif %}>已读</option>
+                    <option value="正在读" {% if book[8] == '正在读' %}selected{% endif %}>正在读</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="storage_status" class="form-label">在库状态</label>
+                <select class="form-select" id="storage_status" name="storage_status">
+                    <option value="在库" {% if book[9] == '在库' %}selected{% endif %}>在库</option>
+                    <option value="借入" {% if book[9] == '借入' %}selected{% endif %}>借入</option>
+                    <option value="借出" {% if book[9] == '借出' %}selected{% endif %}>借出</option>
+                    <option value="归档" {% if book[9] == '归档' %}selected{% endif %}>归档</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="rating" class="form-label">评分</label>
+                <select class="form-select" id="rating" name="rating">
+                    <option value="1" {% if book[10] == 1 %}selected{% endif %}>1星</option>
+                    <option value="2" {% if book[10] == 2 %}selected{% endif %}>2星</option>
+                    <option value="3" {% if book[10] == 3 %}selected{% endif %}>3星</option>
+                    <option value="4" {% if book[10] == 4 %}selected{% endif %}>4星</option>
+                    <option value="5" {% if book[10] == 5 %}selected{% endif %}>5星</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <a href="/" class="btn btn-secondary">返回</a>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 
