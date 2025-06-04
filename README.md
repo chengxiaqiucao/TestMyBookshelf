@@ -1,6 +1,6 @@
-[![testing-practice](https://img.shields.io/badge/topic-testing__practice-blue)]()
+[![testing](https://img.shields.io/badge/topic-testing-blue)]()
 [![bug-hunting](https://img.shields.io/badge/topic-bug__hunting-red)]()
-[![qa-training](https://img.shields.io/badge/topic-qa__training-green)]()
+[![python](https://img.shields.io/badge/topic-python-green)]()
 
 
 
