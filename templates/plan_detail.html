@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 返回按钮 -->
+    <div class="mb-4">
+        <a href="/plans" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+    </div>
+
+    <!-- 计划信息卡片 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <h2 class="card-title mb-1">{{ plan[9] }}</h2>
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-person"></i> {{ plan[2] }} | 
+                        <i class="bi bi-flag"></i> {{ plan[8] or '未设置' }}
+                    </p>
+                </div>
+                <span class="badge {% if plan[6] == '已完成' %}bg-success{% elif plan[6] == '进行中' %}bg-primary{% elif plan[6] == '已取消' %}bg-secondary{% else %}bg-warning{% endif %} fs-6">
+                    {{ plan[6] }}
+                </span>
+            </div>
+            
+            <p class="card-text">{{ plan[3] or '暂无描述' }}</p>
+            
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="text-muted">进度</small>
+                    <small class="text-muted">{{ plan[7] or 0 }}%</small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" style="width: {{ plan[7] or 0 }}%"></div>
+                </div>
+            </div>
+            
+            <div class="row text-muted small">
+                <div class="col-md-6">
+                    <p class="mb-1">
+                        <i class="bi bi-calendar-event"></i> 开始日期：{{ plan[4] }}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <p class="mb-1">
+                        <i class="bi bi-calendar-check"></i> 结束日期：{{ plan[5] or '未设置' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务列表 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">任务列表</h5>
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="bi bi-plus-lg"></i> 添加任务
+            </button>
+        </div>
+        <div class="card-body">
+            {% for task in tasks %}
+            <div class="task-item mb-3 p-3 border rounded">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <h6 class="mb-1">{{ task[4] }}</h6>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-person"></i> {{ task[6] or '未指定' }} | 
+                            <i class="bi bi-clock"></i> {{ task[2] or '未设置' }} ~ {{ task[3] or '未设置' }}
+                        </p>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <form action="/plan/{{ plan[0] }}/task/{{ task[0] }}/update" method="post" class="me-2">
+                            <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="未开始" {% if task[5] == '未开始' %}selected{% endif %}>未开始</option>
+                                <option value="进行中" {% if task[5] == '进行中' %}selected{% endif %}>进行中</option>
+                                <option value="已完成" {% if task[5] == '已完成' %}selected{% endif %}>已完成</option>
+                                <option value="已取消" {% if task[5] == '已取消' %}selected{% endif %}>已取消</option>
+                            </select>
+                        </form>
+                        <span class="badge {% if task[5] == '已完成' %}bg-success{% elif task[5] == '进行中' %}bg-primary{% elif task[5] == '已取消' %}bg-secondary{% else %}bg-warning{% endif %}">
+                            {{ task[5] }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 暂无任务
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- 添加任务模态框 -->
+<div class="modal fade" id="addTaskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加任务</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/plan/{{ plan[0] }}/task/add" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">任务描述</label>
+                        <input type="text" name="description" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">开始时间</label>
+                        <input type="datetime-local" name="start_time" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">结束时间</label>
+                        <input type="datetime-local" name="end_time" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">执行者</label>
+                        <input type="text" name="executor" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

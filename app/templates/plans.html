@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}阅读计划 - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>阅读计划</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+            <i class="bi bi-plus-lg"></i> 添加计划
+        </button>
+    </div>
+
+    <!-- 计划列表 -->
+    <div class="row">
+        {% for plan in plans %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ plan.book_title }}</h5>
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="badge {% if plan.priority == '高' %}bg-danger{% elif plan.priority == '中' %}bg-warning{% else %}bg-info{% endif %} mb-1">
+                                {{ plan.priority }}优先级
+                            </span>
+                            <span class="badge {% if plan.status == '进行中' %}bg-primary{% elif plan.status == '已完成' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ plan.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <p class="card-text text-muted small mb-2">
+                        <i class="bi bi-person"></i> {{ plan.planner }}
+                    </p>
+                    <p class="card-text">{{ plan.description or '暂无描述' }}</p>
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ plan.progress }}%;" 
+                             aria-valuenow="{{ plan.progress }}" aria-valuemin="0" aria-valuemax="100">
+                            {{ plan.progress }}%
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ plan.start_date }} - {{ plan.end_date or '未定' }}
+                        </small>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    onclick="editPlan({{ plan.id }})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="deletePlan({{ plan.id }})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- 添加计划模态框 -->
+<div class="modal fade" id="addPlanModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">添加阅读计划</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPlanForm">
+                    <div class="mb-3">
+                        <label class="form-label">选择图书</label>
+                        <select class="form-select" name="book_id" required>
+                            <option value="">请选择图书</option>
+                            {% for book in books %}
+                            <option value="{{ book.id }}">{{ book.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">计划人</label>
+                        <input type="text" class="form-control" name="planner" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">开始日期</label>
+                        <input type="date" class="form-control" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">结束日期</label>
+                        <input type="date" class="form-control" name="end_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">优先级</label>
+                        <select class="form-select" name="priority" required>
+                            <option value="高">高</option>
+                            <option value="中" selected>中</option>
+                            <option value="低">低</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="submitPlan()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑计划模态框 -->
+<div class="modal fade" id="editPlanModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">编辑阅读计划</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editPlanForm">
+                    <input type="hidden" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">选择图书</label>
+                        <select class="form-select" name="book_id" required>
+                            <option value="">请选择图书</option>
+                            {% for book in books %}
+                            <option value="{{ book.id }}">{{ book.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">计划人</label>
+                        <input type="text" class="form-control" name="planner" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">描述</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">开始日期</label>
+                        <input type="date" class="form-control" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">结束日期</label>
+                        <input type="date" class="form-control" name="end_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">状态</label>
+                        <select class="form-select" name="status" required>
+                            <option value="未开始">未开始</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">进度</label>
+                        <input type="number" class="form-control" name="progress" min="0" max="100" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">优先级</label>
+                        <select class="form-select" name="priority" required>
+                            <option value="高">高</option>
+                            <option value="中">中</option>
+                            <option value="低">低</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="updatePlan()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 添加计划
+async function submitPlan() {
+    const form = document.getElementById('addPlanForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await fetch('/plans/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('添加计划失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('添加计划失败');
+    }
+}
+
+// 编辑计划
+async function editPlan(id) {
+    try {
+        const response = await fetch(`/plans/${id}`);
+        const plan = await response.json();
+        
+        const form = document.getElementById('editPlanForm');
+        form.id.value = plan.id;
+        form.book_id.value = plan.book_id;
+        form.planner.value = plan.planner;
+        form.description.value = plan.description || '';
+        form.start_date.value = plan.start_date;
+        form.end_date.value = plan.end_date || '';
+        form.status.value = plan.status;
+        form.progress.value = plan.progress;
+        form.priority.value = plan.priority;
+        
+        new bootstrap.Modal(document.getElementById('editPlanModal')).show();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('获取计划详情失败');
+    }
+}
+
+// 更新计划
+async function updatePlan() {
+    const form = document.getElementById('editPlanForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    const id = data.id;
+    delete data.id;
+    
+    try {
+        const response = await fetch(`/plans/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('更新计划失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('更新计划失败');
+    }
+}
+
+// 删除计划
+async function deletePlan(id) {
+    if (!confirm('确定要删除这个计划吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/plans/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('删除计划失败');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('删除计划失败');
+    }
+}
+</script>
+{% endblock %} 

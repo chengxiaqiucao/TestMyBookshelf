@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 返回按钮 -->
+    <div class="mb-4">
+        <a href="/books" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> 返回列表
+        </a>
+    </div>
+
+    <!-- 图书详情卡片 -->
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- 封面图片 -->
+                <div class="col-md-3">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image }}" class="img-fluid rounded" alt="{{ book.title }}">
+                    {% else %}
+                    <div class="bg-light rounded p-5 text-center">
+                        <i class="bi bi-book" style="font-size: 5rem;"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 图书信息 -->
+                <div class="col-md-9">
+                    <h2 class="card-title">{{ book.title }}</h2>
+                    <h6 class="card-subtitle mb-3 text-muted">{{ book.author }}</h6>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>阅读状态：</strong>
+                                <span class="badge {% if book.reading_status == '已读' %}bg-success{% elif book.reading_status == '正在读' %}bg-primary{% elif book.reading_status == '待读' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ book.reading_status }}
+                                </span>
+                            </p>
+                            <p><strong>在库状态：</strong>
+                                <span class="badge {% if book.storage_status == '在库' %}bg-success{% elif book.storage_status == '借出' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ book.storage_status }}
+                                </span>
+                            </p>
+                            <p><strong>出版日期：</strong> {{ book.publish_date or '未知' }}</p>
+                            <p><strong>原价：</strong> ¥{{ book.original_price or '0.00' }}</p>
+                            <p><strong>购买价格：</strong> ¥{{ book.purchase_price or '0.00' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>购买日期：</strong> {{ book.purchase_date or '未知' }}</p>
+                            <p><strong>购买人：</strong> {{ book.purchaser or '未知' }}</p>
+                            <p><strong>评分：</strong> 
+                                {% for i in range(book.rating or 0) %}
+                                <i class="bi bi-star-fill text-warning"></i>
+                                {% endfor %}
+                                {% for i in range(5 - (book.rating or 0)) %}
+                                <i class="bi bi-star text-warning"></i>
+                                {% endfor %}
+                            </p>
+                            <p><strong>添加时间：</strong> {{ book.created_at }}</p>
+                            <p><strong>更新时间：</strong> {{ book.updated_at }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>简介</h5>
+                        <p class="card-text">{{ book.description or '暂无简介' }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>笔记</h5>
+                        <p class="card-text">{{ book.user_notes or '暂无笔记' }}</p>
+                    </div>
+                    
+                    {% if book.reading_notes %}
+                    <div class="mb-3">
+                        <h5>阅读笔记</h5>
+                        <a href="{{ book.reading_notes }}" class="btn btn-outline-primary" target="_blank">
+                            <i class="bi bi-file-text"></i> 查看笔记
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 相关阅读计划 -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">阅读计划</h5>
+            <a href="/plans/add?book_id={{ book.id }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus"></i> 添加计划
+            </a>
+        </div>
+        <div class="card-body">
+            {% if plans %}
+            <div class="list-group">
+                {% for plan in plans %}
+                <a href="/plans/{{ plan.id }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ plan.planner }} 的计划</h6>
+                        <small>
+                            <span class="badge {% if plan.status == '进行中' %}bg-primary{% elif plan.status == '已完成' %}bg-success{% elif plan.status == '已取消' %}bg-secondary{% else %}bg-warning{% endif %}">
+                                {{ plan.status }}
+                            </span>
+                        </small>
+                    </div>
+                    <p class="mb-1">{{ plan.description }}</p>
+                    <small>
+                        {{ plan.start_date }} 至 {{ plan.end_date }}
+                        <span class="badge {% if plan.priority == '高' %}bg-danger{% elif plan.priority == '中' %}bg-warning{% else %}bg-info{% endif %}">
+                            {{ plan.priority }}优先级
+                        </span>
+                    </small>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">暂无阅读计划</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 相关书籍 -->
+    {% if related_books %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">相关书籍</h5>
+        </div>
+        <div class="card-body">
+            <div class="list-group">
+                {% for book in related_books %}
+                <a href="/books/{{ book.id }}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">{{ book.title }}</h6>
+                        <small>{{ book.author }}</small>
+                    </div>
+                    <p class="mb-1">{{ book.description }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

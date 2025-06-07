@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- 图书基本信息 -->
+        <div class="col-md-4">
+            <div class="card">
+                {% if book[13] %}
+                <img src="/static/{{ book[13] }}" class="card-img-top" alt="{{ book[1] }}">
+                {% else %}
+                <div class="card-img-top bg-light text-center py-5">
+                    <i class="fas fa-book fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ book[1] }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ book[2] }}</h6>
+                    <p class="card-text">{{ book[3] }}</p>
+                    <div class="mb-2">
+                        <span class="badge bg-primary">{{ book[8] }}</span>
+                        <span class="badge bg-secondary">{{ book[9] }}</span>
+                        <span class="badge bg-info">评分: {{ book[10] }}</span>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">出版日期: {{ book[4] }}</small><br>
+                        <small class="text-muted">原价: ¥{{ book[5] }}</small><br>
+                        <small class="text-muted">购买价: ¥{{ book[6] }}</small><br>
+                        <small class="text-muted">购买日期: {{ book[12] }}</small><br>
+                        <small class="text-muted">购买者: {{ book[14] }}</small>
+                    </div>
+                    {% if book[7] %}
+                    <p class="card-text"><small class="text-muted">笔记: {{ book[7] }}</small></p>
+                    {% endif %}
+                    {% if related_book %}
+                    <p class="card-text">
+                        <small class="text-muted">关联图书: 
+                            <a href="/book/{{ related_book[0] }}">{{ related_book[1] }}</a>
+                        </small>
+                    </p>
+                    {% endif %}
+                    {% if book[15] %}
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <a href="/static/{{ book[15] }}" target="_blank">查看读书笔记</a>
+                        </small>
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="/edit/{{ book[0] }}" class="btn btn-primary">编辑</a>
+                    <form action="/delete/{{ book[0] }}" method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除这本书吗？')">删除</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 阅读计划 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">阅读计划</h5>
+                    <a href="/plan/add?book_id={{ book[0] }}" class="btn btn-primary btn-sm">添加计划</a>
+                </div>
+                <div class="card-body">
+                    {% if plans %}
+                    <div class="list-group">
+                        {% for plan in plans %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ plan[9] }}</h6>
+                                <small>{{ plan[4] }} - {{ plan[5] }}</small>
+                            </div>
+                            <p class="mb-1">{{ plan[3] }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-primary">{{ plan[6] }}</span>
+                                    <span class="badge bg-secondary">{{ plan[8] }}</span>
+                                </div>
+                                <div class="progress" style="width: 200px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ plan[7] }}%">
+                                        {{ plan[7] }}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <a href="/plan/{{ plan[0] }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">暂无阅读计划</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

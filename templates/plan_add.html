@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">添加阅读计划</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/plan/add" method="post">
+                        <div class="mb-3">
+                            <label for="book_id" class="form-label">选择图书</label>
+                            <select class="form-select" id="book_id" name="book_id" required>
+                                <option value="">请选择图书</option>
+                                {% for book in books %}
+                                <option value="{{ book[0] }}" {% if request.query_params.get('book_id')|int == book[0] %}selected{% endif %}>
+                                    {{ book[1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="planner" class="form-label">计划者</label>
+                            <input type="text" class="form-control" id="planner" name="planner" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">计划描述</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="start_date" class="form-label">开始日期</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="end_date" class="form-label">结束日期</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">状态</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="未开始">未开始</option>
+                                <option value="进行中">进行中</option>
+                                <option value="已完成">已完成</option>
+                                <option value="已取消">已取消</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">优先级</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="">请选择优先级</option>
+                                <option value="高">高</option>
+                                <option value="中">中</option>
+                                <option value="低">低</option>
+                            </select>
+                        </div>
+                        <div class="text-end">
+                            <a href="/plans" class="btn btn-secondary">取消</a>
+                            <button type="submit" class="btn btn-primary">添加</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

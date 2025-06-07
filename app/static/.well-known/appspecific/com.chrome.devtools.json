@@ -1,0 +1,11 @@
+{
+    "devtools": {
+        "customFormatters": [
+            {
+                "name": "BookShelf",
+                "description": "BookShelf application formatter",
+                "url": "/static/js/devtools-formatter.js"
+            }
+        ]
+    }
+} 

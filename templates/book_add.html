@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">添加新书</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/add" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">书名</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="author" class="form-label">作者</label>
+                            <input type="text" class="form-control" id="author" name="author" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">简介</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="publication_date" class="form-label">出版日期</label>
+                            <input type="date" class="form-control" id="publication_date" name="publication_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="original_price" class="form-label">原价</label>
+                            <input type="number" step="0.01" class="form-control" id="original_price" name="original_price">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_price" class="form-label">购买价格</label>
+                            <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_date" class="form-label">购买日期</label>
+                            <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchaser" class="form-label">购买者</label>
+                            <input type="text" class="form-control" id="purchaser" name="purchaser">
+                        </div>
+                        <div class="mb-3">
+                            <label for="reading_status" class="form-label">阅读状态</label>
+                            <select class="form-select" id="reading_status" name="reading_status">
+                                <option value="待读">待读</option>
+                                <option value="在读">在读</option>
+                                <option value="已读">已读</option>
+                                <option value="已弃">已弃</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="storage_status" class="form-label">在库状态</label>
+                            <select class="form-select" id="storage_status" name="storage_status">
+                                <option value="待购买">待购买</option>
+                                <option value="在库">在库</option>
+                                <option value="借入">借入</option>
+                                <option value="借出">借出</option>
+                                <option value="归档">归档</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">评分</label>
+                            <select class="form-select" id="rating" name="rating">
+                                <option value="1">1星</option>
+                                <option value="2">2星</option>
+                                <option value="3">3星</option>
+                                <option value="4">4星</option>
+                                <option value="5">5星</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reading_notes" class="form-label">读书笔记</label>
+                            <textarea class="form-control" id="reading_notes" name="reading_notes" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cover_image" class="form-label">封面图片</label>
+                            <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes_file" class="form-label">读书笔记文件</label>
+                            <input type="file" class="form-control" id="notes_file" name="notes_file" accept=".txt,.pdf,.doc,.docx">
+                        </div>
+                        <div class="mb-3">
+                            <label for="related_book_id" class="form-label">关联图书</label>
+                            <select class="form-select" id="related_book_id" name="related_book_id">
+                                <option value="">无</option>
+                                {% for book in books %}
+                                <option value="{{ book[0] }}">{{ book[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="text-end">
+                            <a href="/" class="btn btn-secondary">取消</a>
+                            <button type="submit" class="btn btn-primary">添加</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

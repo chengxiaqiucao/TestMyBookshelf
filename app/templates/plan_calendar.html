@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+.fc-event {
+    cursor: pointer;
+}
+.fc-event:hover {
+    opacity: 0.9;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>阅读计划日历</h2>
+        <a href="/plans/" class="btn btn-outline-secondary">
+            <i class="bi bi-list"></i> 列表视图
+        </a>
+    </div>
+
+    <div id="calendar"></div>
+</div>
+
+<!-- 任务详情模态框 -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">任务详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="taskTitle"></h6>
+                <p id="taskDescription" class="text-muted"></p>
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-book"></i> <span id="taskBook"></span>
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-calendar"></i> <span id="taskDueDate"></span>
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">
+                        <i class="bi bi-flag"></i> <span id="taskStatus"></span>
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <a href="#" id="taskEditLink" class="btn btn-primary">编辑</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var taskData = JSON.parse('{{ tasks|tojson|safe }}');
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'zh-cn',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: taskData.map(function(task) {
+            return {
+                id: task.id,
+                title: task.title,
+                start: task.due_date,
+                end: task.due_date,
+                description: task.description,
+                bookTitle: task.book_title,
+                bookAuthor: task.book_author,
+                status: task.status,
+                url: '/plans/' + task.plan_id,
+                backgroundColor: getStatusColor(task.status),
+                borderColor: getStatusColor(task.status)
+            };
+        }),
+        eventClick: function(info) {
+            showTaskModal(info.event);
+        }
+    });
+    calendar.render();
+
+    function getStatusColor(status) {
+        switch(status) {
+            case '已完成':
+                return '#28a745';
+            case '进行中':
+                return '#007bff';
+            case '已取消':
+                return '#6c757d';
+            default:
+                return '#ffc107';
+        }
+    }
+
+    function showTaskModal(event) {
+        document.getElementById('taskTitle').textContent = event.title;
+        document.getElementById('taskDescription').textContent = event.extendedProps.description || '暂无描述';
+        document.getElementById('taskBook').textContent = event.extendedProps.bookTitle + ' - ' + event.extendedProps.bookAuthor;
+        document.getElementById('taskDueDate').textContent = event.start.toLocaleDateString();
+        document.getElementById('taskStatus').textContent = event.extendedProps.status;
+        document.getElementById('taskEditLink').href = event.url;
+        
+        var modal = new bootstrap.Modal(document.getElementById('taskModal'));
+        modal.show();
+    }
+});
+</script>
+{% endblock %} 

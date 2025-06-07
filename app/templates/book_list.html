@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block title %}图书列表 - 我的书架{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- 页面标题和操作按钮 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-book"></i> 图书列表</h2>
+        <a href="/books/add" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> 添加新书
+        </a>
+    </div>
+
+    <!-- 搜索和筛选 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search" placeholder="搜索书名或作者" value="{{ request.query_params.get('search', '') }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="reading_status">
+                        <option value="">阅读状态</option>
+                        <option value="待读" {% if request.query_params.get('reading_status') == '待读' %}selected{% endif %}>待读</option>
+                        <option value="正在读" {% if request.query_params.get('reading_status') == '正在读' %}selected{% endif %}>正在读</option>
+                        <option value="已读" {% if request.query_params.get('reading_status') == '已读' %}selected{% endif %}>已读</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="storage_status">
+                        <option value="">存放状态</option>
+                        <option value="在库" {% if request.query_params.get('storage_status') == '在库' %}selected{% endif %}>在库</option>
+                        <option value="借出" {% if request.query_params.get('storage_status') == '借出' %}selected{% endif %}>借出</option>
+                        <option value="丢失" {% if request.query_params.get('storage_status') == '丢失' %}selected{% endif %}>丢失</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">搜索</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 图书列表 -->
+    <div class="row">
+        {% for book in books %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if book.cover_image %}
+                <img src="{{ book.cover_image }}" class="card-img-top" alt="{{ book.title }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-book fs-1 text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ book.title }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="bi bi-person"></i> {{ book.author }}<br>
+                            <i class="bi bi-calendar"></i> {{ book.publish_date }}<br>
+                            <i class="bi bi-tag"></i> 
+                            {% if book.reading_status == '已读' %}
+                            <span class="badge bg-success">已读</span>
+                            {% elif book.reading_status == '正在读' %}
+                            <span class="badge bg-primary">正在读</span>
+                            {% elif book.reading_status == '待读' %}
+                            <span class="badge bg-warning text-dark">待读</span>
+                            {% endif %}<br>
+                            <i class="bi bi-box"></i> 
+                            {% if book.storage_status == '在库' %}
+                            <span class="badge bg-info text-dark">在库</span>
+                            {% elif book.storage_status == '借出' %}
+                            <span class="badge bg-warning text-dark">借出</span>
+                            {% elif book.storage_status == '丢失' %}
+                            <span class="badge bg-danger">丢失</span>
+                            {% elif book.storage_status == '借入' %}
+                            <span class="badge bg-secondary">借入</span>
+                            {% elif book.storage_status == '归档' %}
+                            <span class="badge bg-dark">归档</span>
+                            {% endif %}
+                        </small>
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group">
+                            <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">详情</a>
+                            <a href="/books/{{ book.id }}/edit" class="btn btn-sm btn-outline-secondary">编辑</a>
+                        </div>
+                        <small class="text-muted">¥{{ book.purchase_price }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    {% if total_pages > 1 %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                <a class="page-link" href="?page={{ page - 1 }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ p }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                <a class="page-link" href="?page={{ page + 1 }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// 添加自定义过滤器
+document.addEventListener('DOMContentLoaded', function() {
+    // 移除URL参数的函数
+    function removeParam(url, param) {
+        const urlObj = new URL(url);
+        urlObj.searchParams.delete(param);
+        return urlObj.search;
+    }
+});
+</script>
+{% endblock %} 

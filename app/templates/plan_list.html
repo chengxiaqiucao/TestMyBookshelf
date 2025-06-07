@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-calendar-check"></i> 阅读计划</h2>
+        <div>
+            <a href="/plan/calendar" class="btn btn-outline-primary me-2">
+                <i class="bi bi-calendar3"></i> 日历视图
+            </a>
+            <a href="/plans/add" class="btn btn-primary">
+                <i class="bi bi-plus"></i> 添加计划
+            </a>
+        </div>
+    </div>
+
+    <!-- 状态过滤 -->
+    <div class="mb-4">
+        <div class="btn-group" role="group">
+            <a href="/plans/" class="btn btn-outline-secondary {% if not current_status %}active{% endif %}">
+                <i class="bi bi-grid-3x3-gap"></i> 全部
+            </a>
+            {% for status in all_statuses %}
+            <a href="/plans/?status={{ status }}" 
+               class="btn btn-outline-secondary {% if current_status == status %}active{% endif %}">
+                {% if status == '进行中' %}
+                <i class="bi bi-play-circle-fill text-primary"></i>
+                {% elif status == '已完成' %}
+                <i class="bi bi-check-circle-fill text-success"></i>
+                {% elif status == '已取消' %}
+                <i class="bi bi-x-circle-fill text-secondary"></i>
+                {% elif status == '未开始' %}
+                <i class="bi bi-hourglass-split text-warning"></i>
+                {% endif %}
+                {{ status }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 计划列表 -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for plan in plans %}
+        <div class="col">
+            <div class="card h-100 shadow-sm position-relative">
+                <!-- 状态标签 -->
+                <div class="position-absolute top-0 start-0 p-3">
+                    {% if plan.status == '已完成' %}
+                    <div class="status-badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
+                        <i class="bi bi-check-circle-fill"></i> 已完成
+                    </div>
+                    {% elif plan.status == '进行中' %}
+                    <div class="status-badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-3 py-2">
+                        <i class="bi bi-play-circle-fill"></i> 进行中
+                    </div>
+                    {% elif plan.status == '已取消' %}
+                    <div class="status-badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-3 py-2">
+                        <i class="bi bi-x-circle-fill"></i> 已取消
+                    </div>
+                    {% elif plan.status == '未开始' %}
+                    <div class="status-badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-3 py-2">
+                        <i class="bi bi-hourglass-split"></i> 未开始
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body pt-5">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ plan.book_title }}</h5>
+                        {% if plan.priority == '高' %}
+                        <span class="badge rounded-pill bg-danger bg-opacity-10 text-danger border border-danger">
+                            <i class="bi bi-flag-fill"></i> 高优先级
+                        </span>
+                        {% elif plan.priority == '中' %}
+                        <span class="badge rounded-pill bg-warning bg-opacity-10 text-warning border border-warning">
+                            <i class="bi bi-flag"></i> 中优先级
+                        </span>
+                        {% elif plan.priority == '低' %}
+                        <span class="badge rounded-pill bg-info bg-opacity-10 text-info border border-info">
+                            <i class="bi bi-flag"></i> 低优先级
+                        </span>
+                        {% endif %}
+                    </div>
+                    <p class="card-text text-muted small mb-2">
+                        <i class="bi bi-person"></i> {{ plan.planner }} | 
+                        <i class="bi bi-book"></i> {{ plan.book_author or '未设置' }}
+                    </p>
+                    <p class="card-text">{{ plan.description or '暂无描述' }}</p>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">进度</small>
+                            <small class="text-muted">{{ plan.progress or 0 }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar {% if plan.progress >= 100 %}bg-success{% elif plan.progress >= 50 %}bg-primary{% else %}bg-warning{% endif %}" 
+                                 role="progressbar" 
+                                 style="width: {{ plan.progress or 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar"></i> {{ plan.start_date }} ~ {{ plan.end_date }}
+                        </small>
+                        <a href="/plans/{{ plan.id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> 查看详情
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 暂无阅读计划
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

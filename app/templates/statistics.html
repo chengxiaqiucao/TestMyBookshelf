@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}统计 - {{ super() }}{% endblock %}
+
+{% block extra_css %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">统计</h2>
+    
+    <!-- 基本统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">总藏书量</h5>
+                    <p class="card-text display-4">{{ stats.total_books }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">已读书籍</h5>
+                    <p class="card-text display-4">{{ stats.read_books }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">正在阅读</h5>
+                    <p class="card-text display-4">{{ stats.reading_books }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">待读书籍</h5>
+                    <p class="card-text display-4">{{ stats.to_read_books }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">总投资</h5>
+                    <p class="card-text display-4">¥{{ "%.2f"|format(stats.total_investment) }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">阅读计划</h5>
+                    <p class="card-text display-4">{{ stats.total_plans }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">进行中计划</h5>
+                    <p class="card-text display-4">{{ stats.active_plans }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">已完成计划</h5>
+                    <p class="card-text display-4">{{ stats.completed_plans }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="row">
+        <!-- 阅读状态分布 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">阅读状态分布</h5>
+                    <canvas id="readingStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 月度统计 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">月度统计</h5>
+                    <canvas id="monthlyStatsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// 阅读状态分布图表
+const readingStatusCtx = document.getElementById('readingStatusChart').getContext('2d');
+new Chart(readingStatusCtx, {
+    type: 'pie',
+    data: {
+        labels: {{ reading_status|map(attribute='reading_status')|list|tojson }},
+        datasets: [{
+            data: {{ reading_status|map(attribute='count')|list|tojson }},
+            backgroundColor: [
+                '#4e73df',
+                '#1cc88a',
+                '#36b9cc',
+                '#f6c23e'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// 月度统计图表
+const monthlyStatsCtx = document.getElementById('monthlyStatsChart').getContext('2d');
+new Chart(monthlyStatsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_plans|map(attribute='month')|list|tojson }},
+        datasets: [
+            {
+                label: '阅读计划',
+                data: {{ monthly_plans|map(attribute='count')|list|tojson }},
+                borderColor: '#4e73df',
+                fill: false
+            },
+            {
+                label: '购买图书',
+                data: {{ monthly_purchases|map(attribute='count')|list|tojson }},
+                borderColor: '#1cc88a',
+                fill: false
+            },
+            {
+                label: '阅读完成',
+                data: {{ monthly_completions|map(attribute='count')|list|tojson }},
+                borderColor: '#36b9cc',
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}我的书架 - 首页{% endblock %}
+
+{% block head %}
+<style>
+    .progress-thin {
+        height: 6px;
+    }
+    .progress-bar-custom {
+        width: var(--progress-width);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- 欢迎信息 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-4">欢迎使用我的书架</h1>
+            <p class="lead">记录你的阅读旅程，管理你的图书收藏</p>
+        </div>
+    </div>
+
+    <!-- 快速操作区 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">快速操作</h5>
+                    <div class="d-flex gap-2">
+                        <a href="/books/add" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> 添加新书
+                        </a>
+                        <a href="/plans/add" class="btn btn-success">
+                            <i class="bi bi-calendar-plus"></i> 创建阅读计划
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-book fs-1 text-primary mb-2"></i>
+                    <h5 class="card-title">藏书总数</h5>
+                    <p class="card-text display-6">{{ stats.total_books }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-check-circle fs-1 text-success mb-2"></i>
+                    <h5 class="card-title">已读书籍</h5>
+                    <p class="card-text display-6">{{ stats.read_books }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-yen fs-1 text-warning mb-2"></i>
+                    <h5 class="card-title">总投入</h5>
+                    <p class="card-text display-6">¥{{ stats.total_investment }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-check fs-1 text-info mb-2"></i>
+                    <h5 class="card-title">阅读计划</h5>
+                    <p class="card-text display-6">{{ stats.total_plans | default(0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最近添加的书籍 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">最近添加的书籍</h5>
+                    <a href="/books" class="btn btn-sm btn-outline-primary">查看全部</a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for book in recent_books %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ book.title }}</h6>
+                                    <p class="card-text small">
+                                        <i class="bi bi-person"></i> {{ book.author }}<br>
+                                        <i class="bi bi-tag"></i> {{ book.category }}<br>
+                                        <i class="bi bi-calendar"></i> {{ book.purchase_date }}
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 进行中的阅读计划 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">进行中的阅读计划</h5>
+                    <a href="/plans" class="btn btn-sm btn-outline-primary">查看全部</a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for plan in active_plans %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ plan.book_title }}</h6>
+                                    <p class="card-text small">
+                                        <i class="bi bi-person"></i> {{ plan.planner }}<br>
+                                        <i class="bi bi-calendar-check"></i> {{ plan.start_date }} ~ {{ plan.end_date or '未定' }}<br>
+                                        <i class="bi bi-flag"></i> {{ plan.status }}
+                                    </p>
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: {{ plan.progress }}%">
+                                            {{ plan.progress }}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="/plans/{{ plan.id }}" class="btn btn-sm btn-outline-primary">查看详情</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 阅读统计图表
+    var ctx = document.getElementById('readingStats').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['已读', '正在读', '待读'],
+            datasets: [{
+                data: [
+                    {{ stats.read_books }},
+                    {{ stats.reading_books }},
+                    {{ stats.to_read_books }}
+                ],
+                backgroundColor: [
+                    '#28a745',  // 已读 - 绿色
+                    '#17a2b8',  // 正在读 - 蓝色
+                    '#ffc107'   // 待读 - 黄色
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 
