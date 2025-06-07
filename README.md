@@ -79,3 +79,10 @@
 ## 联系方式
 
 如有问题或建议，请联系项目维护者 
+
+---
+
+注入的Bug清单可关注我的公众号：**秋草说测试**
+![秋草说测试](https://github.com/user-attachments/assets/bf1177a9-5eeb-4079-a118-a22fe2e511dd)
+
+欢迎大家提issue反馈更多发现更多Bug ^-^
