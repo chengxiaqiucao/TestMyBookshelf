@@ -93,4 +93,11 @@ python main.py
 1. 验证所有注入的 Bug 是否可重现
 2. 练习 Bug 报告编写
 3. 熟悉常见 Web 应用问题
-4. 提高测试用例设计能力 
+4. 提高测试用例设计能力
+
+---
+
+注入的Bug清单可关注我的公众号：**秋草说测试**
+![秋草说测试](https://github.com/user-attachments/assets/bf1177a9-5eeb-4079-a118-a22fe2e511dd)
+
+欢迎大家提issue反馈更多发现更多Bug ^-^
