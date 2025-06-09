@@ -48,7 +48,7 @@
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="deletePlan({{ plan.id }})">
+                                    onclick="showDeleteModal({{ plan.id }}, '{{ plan.book_title|e }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -102,6 +102,18 @@
                             <option value="中" selected>中</option>
                             <option value="低">低</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">状态</label>
+                        <select class="form-select" name="status">
+                            <option value="未开始" selected>未开始</option>
+                            <option value="进行中">进行中</option>
+                            <option value="已完成">已完成</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">进度</label>
+                        <input type="number" class="form-control" name="progress" min="0" max="100" value="0">
                     </div>
                 </form>
             </div>
@@ -178,40 +190,90 @@
         </div>
     </div>
 </div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deletePlanModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除阅读计划 "<span id="planTitle"></span>" 吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
 // 添加计划
 async function submitPlan() {
     const form = document.getElementById('addPlanForm');
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
+    
+    // 验证必填字段
+    const requiredFields = ['book_id', 'start_date', 'priority', 'planner'];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+        if (!formData.get(field)) {
+            missingFields.push(field);
+        }
+    }
+    
+    if (missingFields.length > 0) {
+        alert('请填写以下必填字段：\n' + missingFields.join('\n'));
+        return;
+    }
+
+    // 设置默认值
+    if (!formData.get('status')) {
+        formData.set('status', '未开始');
+    }
+    if (!formData.get('progress')) {
+        formData.set('progress', '0');
+    }
     
     try {
-        const response = await fetch('/plans/', {
+        const response = await fetch('/plans/add', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
+            body: formData  // 直接提交FormData，不需要设置Content-Type
         });
         
         if (response.ok) {
             window.location.reload();
         } else {
-            alert('添加计划失败');
+            const errorData = await response.json();
+            if (errorData.detail && Array.isArray(errorData.detail)) {
+                // 处理详细的验证错误
+                const errorMessages = errorData.detail.map(error => 
+                    `字段 ${error.loc[1]}: ${error.msg}`
+                );
+                alert('添加失败:\n' + errorMessages.join('\n'));
+            } else {
+                alert(typeof errorData.detail === 'string' ? errorData.detail : '添加计划失败');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('添加计划失败');
+        alert('添加计划失败: ' + error.message);
     }
 }
 
 // 编辑计划
 async function editPlan(id) {
     try {
-        const response = await fetch(`/plans/${id}`);
+        const response = await fetch(`/plans/${id}/json`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const plan = await response.json();
         
         const form = document.getElementById('editPlanForm');
@@ -236,45 +298,73 @@ async function editPlan(id) {
 async function updatePlan() {
     const form = document.getElementById('editPlanForm');
     const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    const id = data.id;
-    delete data.id;
+    const id = formData.get('id');
+    
+    // 确保所有必需字段都有值
+    const requiredFields = ['book_id', 'start_date', 'status', 'priority', 'progress', 'planner'];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+        if (!formData.get(field)) {
+            missingFields.push(field);
+        }
+    }
+    
+    if (missingFields.length > 0) {
+        alert('请填写以下必填字段：\n' + missingFields.join('\n'));
+        return;
+    }
+
+    // 确保数值类型字段为数字
+    formData.set('progress', parseInt(formData.get('progress')));
+    formData.set('book_id', parseInt(formData.get('book_id')));
     
     try {
-        const response = await fetch(`/plans/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
+        const response = await fetch(`/plans/${id}/update`, {
+            method: 'POST',
+            body: formData  // 直接提交FormData，不需要设置Content-Type
         });
         
         if (response.ok) {
             window.location.reload();
         } else {
-            alert('更新计划失败');
+            const errorData = await response.json();
+            if (errorData.detail && Array.isArray(errorData.detail)) {
+                // 处理详细的验证错误
+                const errorMessages = errorData.detail.map(error => 
+                    `字段 ${error.loc[1]}: ${error.msg}`
+                );
+                alert('更新失败:\n' + errorMessages.join('\n'));
+            } else {
+                alert(typeof errorData.detail === 'string' ? errorData.detail : '更新计划失败');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('更新计划失败');
+        alert('更新计划失败: ' + error.message);
     }
 }
 
 // 删除计划
+function showDeleteModal(id, title) {
+    document.getElementById('planTitle').textContent = title;
+    document.getElementById('confirmDeleteBtn').onclick = function() {
+        deletePlan(id);
+    };
+    new bootstrap.Modal(document.getElementById('deletePlanModal')).show();
+}
+
 async function deletePlan(id) {
-    if (!confirm('确定要删除这个计划吗？')) {
-        return;
-    }
-    
     try {
-        const response = await fetch(`/plans/${id}`, {
-            method: 'DELETE'
+        const response = await fetch(`/plans/${id}/delete`, {
+            method: 'POST'
         });
         
         if (response.ok) {
             window.location.reload();
         } else {
-            alert('删除计划失败');
+            const errorData = await response.json();
+            alert(errorData.detail || '删除计划失败');
         }
     } catch (error) {
         console.error('Error:', error);

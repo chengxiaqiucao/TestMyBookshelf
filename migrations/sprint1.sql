@@ -34,7 +34,6 @@ CREATE INDEX IF NOT EXISTS idx_book_tags_tag_name ON book_tags(tag_name);
 CREATE TABLE IF NOT EXISTS reading_plans (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     book_id INTEGER NOT NULL,
-    plan_name TEXT NOT NULL,
     description TEXT,
     start_date TEXT NOT NULL,
     end_date TEXT,

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}阅读计划详情{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h2 class="card-title mb-0">阅读计划详情</h2>
+                    <div>
+                        <a href="/reading-plans/{{ reading_plan.id }}/edit" class="btn btn-warning btn-sm me-2">
+                            <i class="bi bi-pencil"></i> 编辑
+                        </a>
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="card-subtitle mb-2 text-muted">基本信息</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">书籍:</th>
+                                    <td>
+                                        <a href="/books/{{ reading_plan.book_id }}">{{ reading_plan.book_title }}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>计划人:</th>
+                                    <td>{{ reading_plan.planner }}</td>
+                                </tr>
+                                <tr>
+                                    <th>开始日期:</th>
+                                    <td>{{ reading_plan.start_date }}</td>
+                                </tr>
+                                <tr>
+                                    <th>结束日期:</th>
+                                    <td>{{ reading_plan.end_date or '未设置' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="card-subtitle mb-2 text-muted">进度信息</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th style="width: 30%">状态:</th>
+                                    <td>
+                                        {% if reading_plan.status == '进行中' %}
+                                        <span class="badge bg-primary">{{ reading_plan.status }}</span>
+                                        {% elif reading_plan.status == '已完成' %}
+                                        <span class="badge bg-success">{{ reading_plan.status }}</span>
+                                        {% elif reading_plan.status == '已放弃' %}
+                                        <span class="badge bg-danger">{{ reading_plan.status }}</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ reading_plan.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>进度:</th>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ reading_plan.progress }}%;" 
+                                                 aria-valuenow="{{ reading_plan.progress }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ reading_plan.progress }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if reading_plan.notes %}
+                    <div class="mb-3">
+                        <h5 class="card-subtitle mb-2 text-muted">备注</h5>
+                        <div class="card">
+                            <div class="card-body bg-light">
+                                <p class="card-text">{{ reading_plan.notes }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="/reading-plans" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除"{{ reading_plan.book_title }}"的阅读计划吗？此操作不可撤销。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form action="/reading-plans/{{ reading_plan.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

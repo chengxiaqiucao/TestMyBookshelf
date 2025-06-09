@@ -19,28 +19,20 @@
                             <input type="text" class="form-control" id="author" name="author" required>
                         </div>
                         <div class="mb-3">
-                            <label for="description" class="form-label">简介</label>
+                            <label for="isbn" class="form-label">ISBN</label>
+                            <input type="text" class="form-control" id="isbn" name="isbn">
+                        </div>
+                        <div class="mb-3">
+                            <label for="publisher" class="form-label">出版社</label>
+                            <input type="text" class="form-control" id="publisher" name="publisher">
+                        </div>
+                        <div class="mb-3">
+                            <label for="publish_date" class="form-label">出版日期</label>
+                            <input type="date" class="form-control" id="publish_date" name="publish_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">图书描述</label>
                             <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="publication_date" class="form-label">出版日期</label>
-                            <input type="date" class="form-control" id="publication_date" name="publication_date">
-                        </div>
-                        <div class="mb-3">
-                            <label for="original_price" class="form-label">原价</label>
-                            <input type="number" step="0.01" class="form-control" id="original_price" name="original_price">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_price" class="form-label">购买价格</label>
-                            <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_date" class="form-label">购买日期</label>
-                            <input type="date" class="form-control" id="purchase_date" name="purchase_date">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchaser" class="form-label">购买者</label>
-                            <input type="text" class="form-control" id="purchaser" name="purchaser">
                         </div>
                         <div class="mb-3">
                             <label for="reading_status" class="form-label">阅读状态</label>
@@ -51,36 +43,24 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="storage_status" class="form-label">在库状态</label>
-                            <select class="form-select" id="storage_status" name="storage_status">
-                                <option value="待购买">待购买</option>
-                                <option value="在库">在库</option>
-                                <option value="借入">借入</option>
-                                <option value="借出">借出</option>
-                                <option value="归档">归档</option>
-                            </select>
+                            <label for="purchase_price" class="form-label">购买价格</label>
+                            <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price">
                         </div>
                         <div class="mb-3">
-                            <label for="rating" class="form-label">评分</label>
-                            <select class="form-select" id="rating" name="rating">
-                                <option value="1">1星</option>
-                                <option value="2">2星</option>
-                                <option value="3">3星</option>
-                                <option value="4">4星</option>
-                                <option value="5">5星</option>
-                            </select>
+                            <label for="category" class="form-label">分类</label>
+                            <input type="text" class="form-control" id="category" name="category">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_date" class="form-label">购买日期</label>
+                            <input type="date" class="form-control" id="purchase_date" name="purchase_date">
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchaser" class="form-label">购买者</label>
+                            <input type="text" class="form-control" id="purchaser" name="purchaser">
                         </div>
                         <div class="mb-3">
                             <label for="cover_image" class="form-label">封面图片</label>
                             <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
-                        </div>
-                        <div class="mb-3">
-                            <label for="reading_notes" class="form-label">阅读笔记</label>
-                            <input type="file" class="form-control" id="reading_notes" name="reading_notes" accept=".pdf,.doc,.docx,.txt">
-                        </div>
-                        <div class="mb-3">
-                            <label for="user_notes" class="form-label">个人笔记</label>
-                            <textarea class="form-control" id="user_notes" name="user_notes" rows="3"></textarea>
                         </div>
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-primary">添加图书</button>

@@ -10,7 +10,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @router.get("/", response_class=HTMLResponse)
-async def statistics(request: Request):
+@router.get("/{path:path}", response_class=HTMLResponse)
+async def statistics(request: Request, path: str = None):
     """统计页面"""
     conn = get_db_connection()
     cursor = conn.cursor()

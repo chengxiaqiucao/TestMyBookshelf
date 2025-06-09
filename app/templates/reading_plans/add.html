@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}添加阅读计划{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="card-title mb-0">添加阅读计划</h2>
+                </div>
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> {{ error }}
+                    </div>
+                    {% endif %}
+                    
+                    <form action="/reading-plans/add" method="post">
+                        <div class="mb-3">
+                            <label for="book_id" class="form-label">选择书籍 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="book_id" name="book_id" required>
+                                <option value="" selected disabled>-- 请选择书籍 --</option>
+                                {% for book in books %}
+                                <option value="{{ book.id }}" {% if form_data and form_data.book_id == book.id %}selected{% endif %}>
+                                    {{ book.title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="planner" class="form-label">计划人 <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="planner" name="planner" 
+                                   value="{{ form_data.planner if form_data else '' }}" required>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">开始日期 <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ form_data.start_date if form_data else '' }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">结束日期</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{{ form_data.end_date if form_data else '' }}">
+                                <small class="text-muted">可选，留空表示未设置结束日期</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="status" class="form-label">状态 <span class="text-danger">*</span></label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="未开始" {% if form_data and form_data.status == '未开始' %}selected{% endif %}>未开始</option>
+                                <option value="进行中" {% if form_data and form_data.status == '进行中' %}selected{% endif %}>进行中</option>
+                                <option value="已完成" {% if form_data and form_data.status == '已完成' %}selected{% endif %}>已完成</option>
+                                <option value="已放弃" {% if form_data and form_data.status == '已放弃' %}selected{% endif %}>已放弃</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="progress" class="form-label">进度 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="range" class="form-range" id="progress_range" min="0" max="100" step="5" 
+                                       value="{{ form_data.progress if form_data else 0 }}" 
+                                       oninput="document.getElementById('progress').value=this.value">
+                                <input type="number" class="form-control" id="progress" name="progress" min="0" max="100" 
+                                       value="{{ form_data.progress if form_data else 0 }}" required
+                                       oninput="document.getElementById('progress_range').value=this.value">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">备注</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ form_data.notes if form_data else '' }}</textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="/reading-plans" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 保存
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

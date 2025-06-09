@@ -43,51 +43,39 @@
     </div>
 
     <!-- 图书列表 -->
-    <div class="row">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="bookList">
         {% for book in books %}
-        <div class="col-md-4 mb-4">
+        <div class="col">
             <div class="card h-100">
-                {% if book.cover_image %}
-                <img src="{{ book.cover_image }}" class="card-img-top" alt="{{ book.title }}" style="height: 200px; object-fit: cover;">
+                {% if book[7] and book[7] != 'None' and book[7].startswith('uploads/') %}
+                <img src="/static/{{ book[7] }}" class="card-img-top" alt="{{ book[1] }}" 
+                     style="height: 200px; object-fit: cover;"
+                     onerror="this.onerror=null; this.src='/static/default_book_cover.jpg'; this.classList.add('bg-light'); this.classList.add('py-5');">
                 {% else %}
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-                    <i class="bi bi-book fs-1 text-muted"></i>
+                <div class="card-img-top bg-light text-center py-5">
+                    <i class="bi bi-book fa-3x text-muted"></i>
                 </div>
                 {% endif %}
                 <div class="card-body">
-                    <h5 class="card-title">{{ book.title }}</h5>
-                    <p class="card-text">
-                        <small class="text-muted">
-                            <i class="bi bi-person"></i> {{ book.author }}<br>
-                            <i class="bi bi-calendar"></i> {{ book.publish_date }}<br>
-                            <i class="bi bi-tag"></i> 
-                            {% if book.reading_status == '已读' %}
-                            <span class="badge bg-success">已读</span>
-                            {% elif book.reading_status == '正在读' %}
-                            <span class="badge bg-primary">正在读</span>
-                            {% elif book.reading_status == '待读' %}
-                            <span class="badge bg-warning text-dark">待读</span>
-                            {% endif %}<br>
-                            <i class="bi bi-box"></i> 
-                            {% if book.storage_status == '在库' %}
-                            <span class="badge bg-info text-dark">在库</span>
-                            {% elif book.storage_status == '借出' %}
-                            <span class="badge bg-warning text-dark">借出</span>
-                            {% elif book.storage_status == '丢失' %}
-                            <span class="badge bg-danger">丢失</span>
-                            {% elif book.storage_status == '借入' %}
-                            <span class="badge bg-secondary">借入</span>
-                            {% elif book.storage_status == '归档' %}
-                            <span class="badge bg-dark">归档</span>
-                            {% endif %}
-                        </small>
-                    </p>
+                    <h5 class="card-title">{{ book[1] }}</h5>
+                    <h6 class="card-subtitle mb-2 text-muted">{{ book[2] }}</h6>
+                    <p class="card-text text-truncate">{{ book[6] if book[6] and book[6] != 'None' else '' }}</p>
+                    <div class="mb-2">
+                        <span class="badge bg-primary">{{ book[8] if book[8] and book[8] != 'None' else '待读' }}</span>
+                        <span class="badge bg-secondary">{{ book[10] if book[10] and book[10] != 'None' else '未分类' }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
                     <div class="d-flex justify-content-between align-items-center">
+                        <a href="/books/{{ book[0] }}" class="btn btn-sm btn-outline-primary">查看详情</a>
                         <div class="btn-group">
-                            <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">详情</a>
-                            <a href="/books/{{ book.id }}/edit" class="btn btn-sm btn-outline-secondary">编辑</a>
+                            <a href="/books/{{ book[0] }}/edit" class="btn btn-sm btn-outline-secondary">编辑</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#deleteModal"
+                                    data-book-id="{{ book[0] }}"
+                                    data-book-title="{{ book[1]|e }}">删除</button>
                         </div>
-                        <small class="text-muted">¥{{ book.purchase_price }}</small>
                     </div>
                 </div>
             </div>
@@ -118,17 +106,93 @@
     </nav>
     {% endif %}
 </div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除《<span id="bookTitle"></span>》吗？此操作不可恢复。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
-{% block scripts %}
+{% block extra_js %}
 <script>
-// 添加自定义过滤器
+// 等待 DOM 完全加载
 document.addEventListener('DOMContentLoaded', function() {
-    // 移除URL参数的函数
-    function removeParam(url, param) {
-        const urlObj = new URL(url);
-        urlObj.searchParams.delete(param);
-        return urlObj.search;
+    console.log('DOM 加载完成，初始化删除功能...');
+    
+    // 获取所有删除按钮
+    const deleteButtons = document.querySelectorAll('.delete-btn');
+    console.log(`找到 ${deleteButtons.length} 个删除按钮`);
+    
+    // 为每个删除按钮添加点击事件监听器
+    deleteButtons.forEach((button, index) => {
+        button.addEventListener('click', function() {
+            const bookId = this.getAttribute('data-book-id');
+            const bookTitle = this.getAttribute('data-book-title');
+            console.log(`点击删除按钮 ${index + 1}:`, { bookId, bookTitle });
+            
+            // 更新模态框内容
+            const titleElement = document.getElementById('bookTitle');
+            if (titleElement) {
+                titleElement.textContent = bookTitle;
+                console.log('更新模态框标题:', bookTitle);
+            } else {
+                console.error('未找到标题元素');
+            }
+            
+            // 更新表单的提交地址
+            const form = document.getElementById('deleteForm');
+            if (form) {
+                form.action = `/books/${bookId}`;
+                console.log('更新表单提交地址:', form.action);
+            } else {
+                console.error('未找到删除表单');
+            }
+            
+            // 添加 CSRF 令牌
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrf_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+                console.log('添加 CSRF 令牌');
+            } else {
+                console.warn('未找到 CSRF 令牌');
+            }
+        });
+    });
+    
+    // 监听模态框显示事件
+    const deleteModal = document.getElementById('deleteModal');
+    if (deleteModal) {
+        deleteModal.addEventListener('show.bs.modal', function(event) {
+            console.log('模态框显示事件触发');
+        });
+        
+        deleteModal.addEventListener('shown.bs.modal', function(event) {
+            console.log('模态框显示完成');
+        });
+    } else {
+        console.error('未找到删除模态框');
     }
 });
 </script>

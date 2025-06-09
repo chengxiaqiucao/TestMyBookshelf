@@ -48,5 +48,9 @@ def setup_logger():
     # 设置 propagate 为 False，避免日志被父级 logger 处理
     logger.propagate = False
 
+    # 设置 multipart 模块的日志级别为 WARNING，减少调试日志
+    multipart_logger = logging.getLogger('multipart')
+    multipart_logger.setLevel(logging.WARNING)
+
     logger.info(f"Logger initialized. Log file: {log_file}")
-    return logger 
+    return logger
