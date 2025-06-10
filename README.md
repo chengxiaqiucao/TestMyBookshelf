@@ -4,7 +4,7 @@
 
 
 
-# 个人图书管理系统
+# 个人图书管理系统 - 我的书架
 
 ## 项目简介
 
@@ -28,14 +28,18 @@
 
 ```
 .
-├── main.py          # FastAPI应用入口（包含数据库操作）
-├── requirements.txt # 项目依赖
-├── static/          # 静态资源
-│   └── style.css    # 样式文件
-└── templates/       # 模板文件
-    ├── index.html   # 首页
-    ├── add.html     # 添加页面
-    └── edit.html    # 编辑页面
+├── main.py              # FastAPI应用入口（包含数据库操作）
+├── requirements.txt     # 项目依赖
+├── static/              # 静态资源
+│   └── style.css        # 样式文件
+├── templates/           # 模板文件
+│   ├── index.html       # 首页
+│   ├── add.html         # 添加页面
+│   └── edit.html        # 编辑页面
+├── data/                # 数据文件目录
+│   └── bookshelf.db     # SQLite数据库文件
+└── scripts/             # 辅助脚本
+    └── init_sample_data.py # 示例数据初始化脚本
 ```
 
 ## 部署说明
