@@ -128,6 +128,38 @@ def _ensure_sample_covers(conn):
         )
 
 
+# 示例书初始阅读状态：sprint1 基线值（用于判定用户是否改动过）
+BASELINE_READING_STATUS = {
+    "三体": "已读",
+    "活着": "正在读",
+    "百年孤独": "待读",
+    "围城": "待读",
+    "平凡的世界": "待读",
+}
+# 目标均衡分布：已读 2 / 正在读 2 / 待读 1，使统计页阅读状态饼图三类均有呈现
+TARGET_READING_STATUS = {
+    "三体": "已读",
+    "活着": "正在读",
+    "百年孤独": "待读",
+    "围城": "已读",
+    "平凡的世界": "正在读",
+}
+
+
+def _ensure_sample_reading_status(conn):
+    """均衡示例书初始阅读状态分布，幂等且不覆盖用户改动。
+
+    仅当某本书当前状态仍等于 sprint1 基线值（说明未被用户编辑）时才调整；
+    已是目标值或用户自定义值均保持不动。重复执行结果一致。
+    """
+    for title, target in TARGET_READING_STATUS.items():
+        baseline = BASELINE_READING_STATUS.get(title)
+        conn.execute(
+            "UPDATE books SET reading_status = ? WHERE title = ? AND reading_status = ?",
+            (target, title, baseline),
+        )
+
+
 def _migrate_sprint2(conn):
     """Sprint2 幂等迁移：逐列检查，搬运旧表数据，记录版本。"""
     # 版本表
@@ -225,6 +257,9 @@ def init_db():
 
         # 幂等预置示例书封面（仅填空值，不覆盖用户上传）
         _ensure_sample_covers(conn)
+
+        # 幂等均衡示例书阅读状态分布（仅调整未被用户改动的书）
+        _ensure_sample_reading_status(conn)
 
         conn.commit()
         logger.info("数据库已就绪，版本: %s", version)

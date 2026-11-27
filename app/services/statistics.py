@@ -46,10 +46,15 @@ def get_overview(user_id=None) -> dict:
 
 
 def get_reading_distribution(user_id=None):
+    """阅读状态分布，直接返回 ECharts 饼图所需的 {name, value} 结构。
+
+    此前返回 {label, count}，字段名与饼图 series.data 不匹配，导致
+    rendering 为空（统计页阅读状态图无呈现）；此处对齐字段名。
+    """
     conn = get_db_connection()
     try:
         rows = conn.execute(
-            "SELECT reading_status AS label, COUNT(*) AS count FROM books "
+            "SELECT reading_status AS name, COUNT(*) AS value FROM books "
             + ("WHERE owner_id = ? " if user_id is not None else "")
             + "GROUP BY reading_status",
             (user_id,) if user_id is not None else (),
