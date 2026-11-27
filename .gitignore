@@ -195,7 +195,13 @@ cython_debug/
 
 # 项目特定文件
 BUG清单*.md
-prompt-*.mddata/bookshelf.db
+prompt-*.md
+data/bookshelf.db
 logs/
 *.db
 server.log
+
+# 本地 Bug 清单与生成脚本：靶点答案，仅本地保留，绝不推送远端
+BUG_LIST.md
+BUG_LIST.html
+scripts/gen_buglist_html.py
