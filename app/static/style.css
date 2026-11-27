@@ -1,6 +1,69 @@
-body { background-color: #f8f9fa; }
-body > .container { background-color: #fff; padding: 2rem; border-radius: .5rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); min-height: 70vh; }
+/* ===== 基础与布局 ===== */
+body {
+  background-color: #f5f7fa;
+  color: #2d3748;
+}
+body > .container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: .75rem;
+  box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .06);
+  min-height: 70vh;
+}
+
+/* ===== 卡片 ===== */
+.card {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .06);
+  border: 1px solid rgba(0, 0, 0, .04);
+  border-radius: .65rem;
+}
+.stat-card .card-body { padding: 1.25rem 1.4rem; }
+.stat-card .stat-label {
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: #718096;
+  text-transform: uppercase;
+}
+.stat-card .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-top: .35rem;
+}
+.stat-card .stat-value small { font-size: 1rem; font-weight: 600; color: #a0aec0; }
+.stat-card-books .stat-value { color: #3b6ea5; }
+.stat-card-plans .stat-value { color: #4a8b52; }
+.stat-card-rate  .stat-value { color: #c06c2a; }
+
+/* ===== 统计图表：固定容器高度，避免刻度与标签拥挤重叠 ===== */
+.chart-card { overflow: hidden; }
+.chart-card .card-header {
+  background: #fbfcfe;
+  border-bottom: 1px solid #eef1f5;
+  font-weight: 600;
+  font-size: .9rem;
+  color: #4a5568;
+  padding: .8rem 1.1rem;
+}
+.chart-box { width: 100%; height: 330px; }
+.chart-box-heat { height: 300px; }
+
+/* ===== 表格与列表 ===== */
 .table { margin-bottom: 0; }
-.card { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
-.navbar-nav .nav-link { margin-right: .5rem; }
-img.img-thumbnail { object-fit: cover; }
+.table > thead > tr > th {
+  border-bottom-width: 2px;
+  font-size: .85rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: #718096;
+}
+.table-hover tbody tr:hover { background: #f8fafc; }
+.list-group-item { border-color: #eef1f5; }
+
+/* ===== 导航栏 ===== */
+.navbar-nav .nav-link { margin-right: .5rem; border-radius: .35rem; }
+.navbar-nav .nav-link:hover { background: rgba(255, 255, 255, .12); }
+
+/* ===== 图片 ===== */
+img.img-thumbnail { object-fit: cover; border-radius: .4rem; }

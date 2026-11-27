@@ -2,28 +2,117 @@
 {% block content %}
 <h2>{{ t('nav_stats') }}</h2>
 <div class="row g-3 mb-4">
- <div class="col-md-3"><div class="card"><div class="card-body">{{ t('stats_total_books') }}<h3>{{ stats.total_books }}</h3></div></div></div>
- <div class="col-md-3"><div class="card"><div class="card-body">已完成计划<h3>{{ stats.completed_plans }}</h3></div></div></div>
- <div class="col-md-3"><div class="card"><div class="card-body">{{ t('stats_completion') }}<h3>{{ stats.completion_rate }}%</h3></div></div></div>
+ <div class="col-md-4"><div class="card stat-card stat-card-books"><div class="card-body">
+  <div class="stat-label">{{ t('stats_total_books') }}</div><div class="stat-value">{{ stats.total_books }}</div>
+ </div></div></div>
+ <div class="col-md-4"><div class="card stat-card stat-card-plans"><div class="card-body">
+  <div class="stat-label">已完成计划</div><div class="stat-value">{{ stats.completed_plans }}</div>
+ </div></div></div>
+ <div class="col-md-4"><div class="card stat-card stat-card-rate"><div class="card-body">
+  <div class="stat-label">{{ t('stats_completion') }}</div><div class="stat-value">{{ stats.completion_rate }}<small>%</small></div>
+ </div></div></div>
 </div>
-<div class="row">
- <div class="col-md-6"><canvas id="statusChart"></canvas></div>
- <div class="col-md-6"><canvas id="monthlyChart"></canvas></div>
+
+<div class="row g-4">
+ <div class="col-lg-6"><div class="card chart-card">
+  <div class="card-header">{{ t('book_status') }}</div>
+  <div class="card-body"><div class="chart-box" id="statusChart"></div></div>
+ </div></div>
+ <div class="col-lg-6"><div class="card chart-card">
+  <div class="card-header">{{ t('stats_total_plans') }} · {{ t('book_purchase_date') }}</div>
+  <div class="card-body"><div class="chart-box" id="monthlyChart"></div></div>
+ </div></div>
 </div>
-<div class="mt-4"><canvas id="heatmapChart"></canvas></div>
-<a href="/statistics/export.csv" class="btn btn-outline-primary mt-3">导出 CSV</a>
+
+<div class="row g-4 mt-1">
+ <div class="col-12"><div class="card chart-card">
+  <div class="card-header">24 {{ t('stats_recent') }} · {{ t('book_status') }}</div>
+  <div class="card-body"><div class="chart-box chart-box-heat" id="heatmapChart"></div></div>
+ </div></div>
+</div>
+
+<div class="d-flex mt-4">
+ <a href="/statistics/export.csv" class="btn btn-outline-primary">导出 CSV</a>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 <script>
-const c1 = echarts.init(document.getElementById('statusChart'));
-c1.setOption({title:{text:'阅读状态'},series:[{type:'pie',data:{{ distribution|tojson }}}]});
-const c2 = echarts.init(document.getElementById('monthlyChart'));
-c2.setOption({title:{text:'月度趋势'},xAxis:{type:'category',data:{{ monthly.plans|map(attribute='month')|list|tojson }}},
- yAxis:{type:'value'},series:[{type:'line',data:{{ monthly.plans|map(attribute='count')|list|tojson }}}]});
-const c3 = echarts.init(document.getElementById('heatmapChart'));
-const hd = {{ heatmap|tojson }};
-c3.setOption({title:{text:'24小时阅读热力图'},xAxis:{type:'category',data:Object.keys(hd)},
- yAxis:{type:'value'},series:[{type:'bar',data:Object.values(hd)}]});
+(function () {
+  function init(id) {
+    var el = document.getElementById(id);
+    var chart = echarts.init(el);
+    window.addEventListener('resize', function () { chart.resize(); });
+    return chart;
+  }
+  var axisText = { color: '#6c757d', fontSize: 11 };
+  var gridBase = { left: 8, right: 16, top: 16, bottom: 8, containLabel: true };
+  var palette = ['#4e79a7', '#59a14f', '#f28e2b', '#e15759', '#76b7b2', '#edc948'];
+
+  // 阅读状态分布
+  var c1 = init('statusChart');
+  c1.setOption({
+    color: palette,
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0, left: 'center', itemWidth: 12, itemHeight: 12, textStyle: axisText },
+    grid: gridBase,
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '46%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 },
+      label: { formatter: '{b}\n{c}', fontSize: 11, color: '#495057' },
+      labelLine: { length: 8, length2: 8 },
+      data: {{ distribution|tojson }}
+    }]
+  });
+
+  // 月度趋势：X 轴标签旋转 + 自动隐藏重叠，Y 轴最小间隔 1 避免小数刻度
+  var monthly = {{ monthly.plans|map(attribute='month')|list|tojson }};
+  var c2 = init('monthlyChart');
+  c2.setOption({
+    color: palette,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+    grid: { left: 8, right: 16, top: 24, bottom: 56, containLabel: true },
+    xAxis: {
+      type: 'category', data: monthly, boundaryGap: false,
+      axisLabel: { color: '#6c757d', fontSize: 11, rotate: 32, hideOverlap: true },
+      axisLine: { lineStyle: { color: '#dee2e6' } }, axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value', minInterval: 1,
+      axisLabel: { color: '#6c757d', fontSize: 11, formatter: '{value}' },
+      splitLine: { lineStyle: { type: 'dashed', color: '#e9ecef' } }
+    },
+    series: [{
+      name: '计划数', type: 'line', smooth: true, symbolSize: 7,
+      lineStyle: { width: 2.5 }, areaStyle: { opacity: 0.12 },
+      data: {{ monthly.plans|map(attribute='count')|list|tojson }}
+    }]
+  });
+
+  // 24 小时热力图：每小时一根柱，标签间隔显示 + 旋转，避免拥挤
+  var hd = {{ heatmap|tojson }};
+  var c3 = init('heatmapChart');
+  c3.setOption({
+    color: palette,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 8, right: 16, top: 24, bottom: 48, containLabel: true },
+    xAxis: {
+      type: 'category', data: Object.keys(hd),
+      axisLabel: { color: '#6c757d', fontSize: 11, interval: 1, rotate: 30, hideOverlap: true },
+      axisLine: { lineStyle: { color: '#dee2e6' } }, axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value', minInterval: 1,
+      axisLabel: { color: '#6c757d', fontSize: 11, formatter: '{value}' },
+      splitLine: { lineStyle: { type: 'dashed', color: '#e9ecef' } }
+    },
+    series: [{
+      name: '借阅数', type: 'bar', barMaxWidth: 28,
+      itemStyle: { borderRadius: [3, 3, 0, 0] },
+      data: Object.values(hd)
+    }]
+  });
+})();
 </script>
 {% endblock %}

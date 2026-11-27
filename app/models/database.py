@@ -108,6 +108,26 @@ def _backfill_owner_ids(conn):
             logger.warning("跳过 %s 的 owner_id 回填（列不存在）", table)
 
 
+# 示例书封面（按书名匹配），与 scripts/gen_sample_covers.py 生成的文件对应
+SAMPLE_COVERS = {
+    "三体": "/static/covers/santi.svg",
+    "活着": "/static/covers/huozhe.svg",
+    "百年孤独": "/static/covers/bainian.svg",
+    "围城": "/static/covers/weicheng.svg",
+    "平凡的世界": "/static/covers/pingfan.svg",
+}
+
+
+def _ensure_sample_covers(conn):
+    """为示例书预置封面，仅填空值、幂等，不覆盖用户上传的封面。"""
+    for title, path in SAMPLE_COVERS.items():
+        conn.execute(
+            "UPDATE books SET cover_image = ? WHERE title = ? "
+            "AND (cover_image IS NULL OR cover_image = '')",
+            (path, title),
+        )
+
+
 def _migrate_sprint2(conn):
     """Sprint2 幂等迁移：逐列检查，搬运旧表数据，记录版本。"""
     # 版本表
@@ -203,6 +223,9 @@ def init_db():
         # 幂等回填遗留数据的 owner_id（计划外缺陷修复）
         _backfill_owner_ids(conn)
 
+        # 幂等预置示例书封面（仅填空值，不覆盖用户上传）
+        _ensure_sample_covers(conn)
+
         conn.commit()
         logger.info("数据库已就绪，版本: %s", version)
         return version
@@ -250,9 +273,10 @@ def import_sample_data():
             "INSERT INTO users(username,password,email,role,lang) VALUES (?,?,?,'user','zh')",
             ("user1", pwd.hash("user123"), "user1@example.com"))
         conn.execute("""INSERT INTO books(title,author,publish_date,purchase_date,purchaser,
-            purchase_price,reading_status,storage_status,category,rating,owner_id) VALUES
-            (?,?,?,?,?,?,?,?,?,?,?)""",
-            ("三体", "刘慈欣", "2008-01-01", "2024-01-15", "admin", 45.0, "已读", "在库", "科幻", 5, 1))
+            purchase_price,reading_status,storage_status,category,rating,owner_id,cover_image) VALUES
+            (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            ("三体", "刘慈欣", "2008-01-01", "2024-01-15", "admin", 45.0, "已读", "在库", "科幻", 5,
+             1, SAMPLE_COVERS["三体"]))
         conn.commit()
         logger.info("示例数据导入完成：admin / admin123")
     except Exception:
