@@ -22,8 +22,14 @@ def get_overview(user_id=None) -> dict:
             f"SELECT COUNT(*) FROM reading_plans {where} {'AND' if where else 'WHERE'} status = '已完成'", params
         ).fetchone()[0]
 
-        completed_tasks = conn.execute("SELECT COUNT(*) FROM tasks WHERE status = '已完成'").fetchone()[0]
-        all_tasks = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+        # 任务完成率同样按 owner_id 过滤（口径统一，避免全局数据混入）
+        task_where = "WHERE owner_id = ?" if user_id is not None else ""
+        task_params = (user_id,) if user_id is not None else ()
+        completed_tasks = conn.execute(
+            f"SELECT COUNT(*) FROM tasks {task_where} {'AND' if task_where else 'WHERE'} status = '已完成'",
+            task_params,
+        ).fetchone()[0]
+        all_tasks = conn.execute(f"SELECT COUNT(*) FROM tasks {task_where}", task_params).fetchone()[0]
         progress = round(completed_tasks / all_tasks * 100) if all_tasks else 0
 
         return {
@@ -57,17 +63,24 @@ def get_monthly(user_id=None):
     """月度聚合：计划、购买、完成（口径统一来自 books/reading_plans）。"""
     conn = get_db_connection()
     try:
+        where = "WHERE owner_id = ?" if user_id is not None else ""
+        params = (user_id,) if user_id is not None else ()
         plans = conn.execute(
             "SELECT strftime('%Y-%m', start_date) AS month, COUNT(*) AS count "
-            "FROM reading_plans GROUP BY month ORDER BY month DESC LIMIT 12"
+            f"FROM reading_plans {where} GROUP BY month ORDER BY month DESC LIMIT 12",
+            params,
         ).fetchall()
         purchases = conn.execute(
             "SELECT strftime('%Y-%m', purchase_date) AS month, COUNT(*) AS count "
-            "FROM books WHERE purchase_date IS NOT NULL GROUP BY month ORDER BY month DESC LIMIT 12"
+            f"FROM books {where} {'AND' if where else 'WHERE'} purchase_date IS NOT NULL "
+            "GROUP BY month ORDER BY month DESC LIMIT 12",
+            params,
         ).fetchall()
         completions = conn.execute(
             "SELECT strftime('%Y-%m', updated_at) AS month, COUNT(*) AS count "
-            "FROM books WHERE reading_status = '已读' GROUP BY month ORDER BY month DESC LIMIT 12"
+            f"FROM books {where} {'AND' if where else 'WHERE'} reading_status = '已读' "
+            "GROUP BY month ORDER BY month DESC LIMIT 12",
+            params,
         ).fetchall()
         return {"plans": [dict(r) for r in plans],
                 "purchases": [dict(r) for r in purchases],
@@ -80,9 +93,11 @@ def get_hourly_heatmap(user_id=None):
     """24 小时阅读热力图数据（需求 1.4）。基于借阅记录的借出小时分布。"""
     conn = get_db_connection()
     try:
+        where = "WHERE owner_id = ?" if user_id is not None else ""
         rows = conn.execute(
             "SELECT CAST(strftime('%H', loan_date) AS INTEGER) AS hour, COUNT(*) AS count "
-            "FROM loans GROUP BY hour"
+            f"FROM loans {where} GROUP BY hour",
+            (user_id,) if user_id is not None else (),
         ).fetchall()
         data = {h: 0 for h in range(24)}
         for r in rows:

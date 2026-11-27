@@ -87,6 +87,27 @@ def _ensure_sprint2_columns(conn):
         lang TEXT DEFAULT 'zh')""")
 
 
+def _backfill_owner_ids(conn):
+    """幂等回填遗留数据的 owner_id（计划外缺陷修复）。
+
+    sprint1 遗留的 books/reading_plans/tasks 记录 owner_id 为 NULL，
+    按用户过滤后全部落空，导致"书架为空但统计有数据"。
+    将 NULL 归属统一归给 admin 用户，重复执行安全。
+    """
+    admin = conn.execute("SELECT id FROM users WHERE role='admin' ORDER BY id LIMIT 1").fetchone()
+    if not admin:
+        logger.warning("未找到 admin 用户，跳过 owner_id 回填")
+        return
+    admin_id = admin["id"]
+    for table in ("books", "reading_plans", "tasks"):
+        try:
+            cur = conn.execute(f"UPDATE {table} SET owner_id = ? WHERE owner_id IS NULL", (admin_id,))
+            if cur.rowcount:
+                logger.info("已回填 %s 的 %s 条 NULL 归属", table, cur.rowcount)
+        except sqlite3.OperationalError:
+            logger.warning("跳过 %s 的 owner_id 回填（列不存在）", table)
+
+
 def _migrate_sprint2(conn):
     """Sprint2 幂等迁移：逐列检查，搬运旧表数据，记录版本。"""
     # 版本表
@@ -178,6 +199,9 @@ def init_db():
 
         # 幂等补齐：即使已是 v2，也确保所有列存在（支持半升级库）
         _ensure_sprint2_columns(conn)
+
+        # 幂等回填遗留数据的 owner_id（计划外缺陷修复）
+        _backfill_owner_ids(conn)
 
         conn.commit()
         logger.info("数据库已就绪，版本: %s", version)

@@ -1,5 +1,5 @@
 body { background-color: #f8f9fa; }
-.container { background-color: #fff; padding: 2rem; border-radius: .5rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); min-height: 80vh; }
+body > .container { background-color: #fff; padding: 2rem; border-radius: .5rem; box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); min-height: 70vh; }
 .table { margin-bottom: 0; }
 .card { box-shadow: 0 .125rem .25rem rgba(0,0,0,.075); }
 .navbar-nav .nav-link { margin-right: .5rem; }
