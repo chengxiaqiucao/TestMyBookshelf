@@ -1,25 +1,37 @@
+"""示例数据初始化：生成真实 bcrypt 哈希，幂等插入。"""
 import sys
-import os
 from pathlib import Path
 
-# 添加项目根目录到 Python 路径
 project_root = Path(__file__).parent.parent
-sys.path.append(str(project_root))
+sys.path.insert(0, str(project_root))
 
-from app.models.database import import_sample_data
-from app.utils.logger import setup_logger
+from passlib.context import CryptContext
+from app.models.database import get_db_connection
 
-logger = setup_logger()
+pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def main():
-    """初始化示例数据"""
+    conn = get_db_connection()
     try:
-        logger.info("开始初始化示例数据...")
-        import_sample_data()
-        logger.info("示例数据初始化完成！")
-    except Exception as e:
-        logger.error(f"示例数据初始化失败: {str(e)}")
-        sys.exit(1)
+        if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] > 0:
+            print("示例数据已存在，跳过")
+            return
+        conn.execute(
+            "INSERT INTO users(username,password,email,role,lang) VALUES (?,?,?,'admin','zh')",
+            ("admin", pwd.hash("admin123"), "admin@example.com"))
+        conn.execute(
+            "INSERT INTO users(username,password,email,role,lang) VALUES (?,?,?,'user','zh')",
+            ("user1", pwd.hash("user123"), "user1@example.com"))
+        conn.execute("""INSERT INTO books(title,author,publish_date,purchase_date,purchaser,purchase_price,
+            reading_status,storage_status,category,rating,owner_id) VALUES
+            (?,?,?,?,?,?,?,?,?,?,?)""",
+            ("三体", "刘慈欣", "2008-01-01", "2024-01-15", "admin", 45.0, "已读", "在库", "科幻", 5, 1))
+        conn.commit()
+        print("示例数据初始化完成：admin / admin123")
+    finally:
+        conn.close()
+
 
 if __name__ == "__main__":
-    main() 
+    main()

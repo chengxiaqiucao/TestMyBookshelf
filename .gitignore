@@ -195,4 +195,7 @@ cython_debug/
 
 # 项目特定文件
 BUG清单*.md
-prompt-*.md
+prompt-*.mddata/bookshelf.db
+logs/
+*.db
+server.log

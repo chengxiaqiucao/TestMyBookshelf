@@ -1,199 +1,29 @@
 {% extends "base.html" %}
-
-{% block title %}图书列表 - 我的书架{% endblock %}
-
 {% block content %}
-<div class="container mt-4">
-    <!-- 页面标题和操作按钮 -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2><i class="bi bi-book"></i> 图书列表</h2>
-        <a href="/books/add" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> 添加新书
-        </a>
-    </div>
-
-    <!-- 搜索和筛选 -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" name="search" placeholder="搜索书名或作者" value="{{ request.query_params.get('search', '') }}">
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="reading_status">
-                        <option value="">阅读状态</option>
-                        <option value="待读" {% if request.query_params.get('reading_status') == '待读' %}selected{% endif %}>待读</option>
-                        <option value="正在读" {% if request.query_params.get('reading_status') == '正在读' %}selected{% endif %}>正在读</option>
-                        <option value="已读" {% if request.query_params.get('reading_status') == '已读' %}selected{% endif %}>已读</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="storage_status">
-                        <option value="">存放状态</option>
-                        <option value="在库" {% if request.query_params.get('storage_status') == '在库' %}selected{% endif %}>在库</option>
-                        <option value="借出" {% if request.query_params.get('storage_status') == '借出' %}selected{% endif %}>借出</option>
-                        <option value="丢失" {% if request.query_params.get('storage_status') == '丢失' %}selected{% endif %}>丢失</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">搜索</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 图书列表 -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" id="bookList">
-        {% for book in books %}
-        <div class="col">
-            <div class="card h-100">
-                {% if book[7] and book[7] != 'None' and book[7].startswith('uploads/') %}
-                <img src="/static/{{ book[7] }}" class="card-img-top" alt="{{ book[1] }}" 
-                     style="height: 200px; object-fit: cover;"
-                     onerror="this.onerror=null; this.src='/static/default_book_cover.jpg'; this.classList.add('bg-light'); this.classList.add('py-5');">
-                {% else %}
-                <div class="card-img-top bg-light text-center py-5">
-                    <i class="bi bi-book fa-3x text-muted"></i>
-                </div>
-                {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ book[1] }}</h5>
-                    <h6 class="card-subtitle mb-2 text-muted">{{ book[2] }}</h6>
-                    <p class="card-text text-truncate">{{ book[6] if book[6] and book[6] != 'None' else '' }}</p>
-                    <div class="mb-2">
-                        <span class="badge bg-primary">{{ book[8] if book[8] and book[8] != 'None' else '待读' }}</span>
-                        <span class="badge bg-secondary">{{ book[10] if book[10] and book[10] != 'None' else '未分类' }}</span>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <a href="/books/{{ book[0] }}" class="btn btn-sm btn-outline-primary">查看详情</a>
-                        <div class="btn-group">
-                            <a href="/books/{{ book[0] }}/edit" class="btn btn-sm btn-outline-secondary">编辑</a>
-                            <button type="button" class="btn btn-sm btn-outline-danger delete-btn" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#deleteModal"
-                                    data-book-id="{{ book[0] }}"
-                                    data-book-title="{{ book[1]|e }}">删除</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- 分页 -->
-    {% if total_pages > 1 %}
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            <li class="page-item {% if page == 1 %}disabled{% endif %}">
-                <a class="page-link" href="?page={{ page - 1 }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-            </li>
-            {% for p in range(1, total_pages + 1) %}
-            <li class="page-item {% if p == page %}active{% endif %}">
-                <a class="page-link" href="?page={{ p }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ p }}</a>
-            </li>
-            {% endfor %}
-            <li class="page-item {% if page == total_pages %}disabled{% endif %}">
-                <a class="page-link" href="?page={{ page + 1 }}{% for key, value in request.query_params.items() %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
-    {% endif %}
+<div class="d-flex justify-content-between mb-3">
+ <h2>{{ t('nav_books') }}</h2>
+ <a href="/books/add" class="btn btn-success">{{ t('action_add') }}</a>
 </div>
-
-<!-- 删除确认模态框 -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                确定要删除《<span id="bookTitle"></span>》吗？此操作不可恢复。
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <form id="deleteForm" method="POST" style="display: inline;">
-                    <input type="hidden" name="_method" value="DELETE">
-                    <button type="submit" class="btn btn-danger">确认删除</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
+<form class="d-flex mb-3" method="get" action="/books">
+ <input name="search" class="form-control me-2" value="{{ search }}" placeholder="{{ t('action_search') }}">
+ <button class="btn btn-primary">{{ t('action_search') }}</button>
+</form>
+<table class="table table-striped">
+<thead><tr><th>{{ t('book_title') }}</th><th>{{ t('book_author') }}</th><th>{{ t('book_status') }}</th>
+<th>{{ t('book_storage') }}</th><th>{{ t('book_price') }}</th><th></th></tr></thead>
+<tbody>
+{% for b in books %}
+ <tr>
+  <td><a href="/books/{{ b.id }}">{{ b.title }}</a></td><td>{{ b.author }}</td>
+  <td>{{ b.reading_status }}</td><td>{{ b.storage_status }}</td>
+  <td>{{ money(b.purchase_price) }}</td>
+  <td><a href="/books/{{ b.id }}/edit" class="btn btn-sm btn-primary">{{ t('action_edit') }}</a>
+  <form method="post" action="/books/{{ b.id }}/delete" class="d-inline" onsubmit="return confirm('确认删除？')">
+   <button class="btn btn-sm btn-danger">{{ t('action_delete') }}</button></form></td>
+ </tr>
+{% else %}
+ <tr><td colspan="6" class="text-center text-muted">{{ t('empty_books') }}</td></tr>
+{% endfor %}
+</tbody></table>
+<nav>第 {{ page }} / {{ total_pages }} 页</nav>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-// 等待 DOM 完全加载
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM 加载完成，初始化删除功能...');
-    
-    // 获取所有删除按钮
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    console.log(`找到 ${deleteButtons.length} 个删除按钮`);
-    
-    // 为每个删除按钮添加点击事件监听器
-    deleteButtons.forEach((button, index) => {
-        button.addEventListener('click', function() {
-            const bookId = this.getAttribute('data-book-id');
-            const bookTitle = this.getAttribute('data-book-title');
-            console.log(`点击删除按钮 ${index + 1}:`, { bookId, bookTitle });
-            
-            // 更新模态框内容
-            const titleElement = document.getElementById('bookTitle');
-            if (titleElement) {
-                titleElement.textContent = bookTitle;
-                console.log('更新模态框标题:', bookTitle);
-            } else {
-                console.error('未找到标题元素');
-            }
-            
-            // 更新表单的提交地址
-            const form = document.getElementById('deleteForm');
-            if (form) {
-                form.action = `/books/${bookId}`;
-                console.log('更新表单提交地址:', form.action);
-            } else {
-                console.error('未找到删除表单');
-            }
-            
-            // 添加 CSRF 令牌
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-            if (csrfToken) {
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrf_token';
-                csrfInput.value = csrfToken;
-                form.appendChild(csrfInput);
-                console.log('添加 CSRF 令牌');
-            } else {
-                console.warn('未找到 CSRF 令牌');
-            }
-        });
-    });
-    
-    // 监听模态框显示事件
-    const deleteModal = document.getElementById('deleteModal');
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', function(event) {
-            console.log('模态框显示事件触发');
-        });
-        
-        deleteModal.addEventListener('shown.bs.modal', function(event) {
-            console.log('模态框显示完成');
-        });
-    } else {
-        console.error('未找到删除模态框');
-    }
-});
-</script>
-{% endblock %} 

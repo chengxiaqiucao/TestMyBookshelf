@@ -1,104 +1,50 @@
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from ..models.database import get_db_connection
-from ..config import TEMPLATES_DIR
-import logging
+"""统计与分析（修复 S1-F05/R05；注入 S2-F08/F10 靶点）。
 
-logger = logging.getLogger(__name__)
+- S2-F08：CSV 导出未加 UTF-8 BOM，Excel 中文乱码。
+- S2-F10：category 筛选参数接收但未用于 SQL。
+"""
+import csv
+import io
+
+from fastapi import APIRouter, Request, Query
+from fastapi.responses import StreamingResponse
+
+from ..auth import require_user
+from ..templates_helpers import render
+from ..utils.i18n import resolve_lang
+from ..services import statistics as stats_service
+
 router = APIRouter()
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-@router.get("/", response_class=HTMLResponse)
-@router.get("/{path:path}", response_class=HTMLResponse)
-async def statistics(request: Request, path: str = None):
-    """统计页面"""
+
+@router.get("/")
+async def statistics_page(request: Request, category: str = Query(None)):
+    user = require_user(request)
+    lang = resolve_lang(request.cookies.get("lang"), user.lang)
+    overview = stats_service.get_overview(user.id)
+    # S2-F10 靶点：category 参数未参与任何过滤
+    return render(request, "statistics.html", {
+        "stats": overview,
+        "distribution": stats_service.get_reading_distribution(user.id),
+        "monthly": stats_service.get_monthly(user.id),
+        "heatmap": stats_service.get_hourly_heatmap(user.id),
+        "lang": lang, "current_user": user, "category": category or ""})
+
+
+@router.get("/export.csv")
+async def export_csv(request: Request, category: str = Query(None)):
+    user = require_user(request)
+    buf = io.StringIO()  # S2-F08：未写入 BOM
+    writer = csv.writer(buf)
+    writer.writerow(["书名", "作者", "状态", "购买价格"])
+    from ..models.database import get_db_connection
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
     try:
-        # 获取基本统计数据
-        stats = {
-            "total_books": cursor.execute("SELECT COUNT(*) FROM books").fetchone()[0],
-            "read_books": cursor.execute("SELECT COUNT(*) FROM books WHERE reading_status = '已读'").fetchone()[0],
-            "reading_books": cursor.execute("SELECT COUNT(*) FROM books WHERE reading_status = '正在读'").fetchone()[0],
-            "to_read_books": cursor.execute("SELECT COUNT(*) FROM books WHERE reading_status = '待读'").fetchone()[0],
-            "total_investment": cursor.execute("SELECT COALESCE(SUM(purchase_price), 0) FROM books").fetchone()[0],
-            "avg_rating": 0,  # 暂时不显示评分
-            "total_plans": cursor.execute("SELECT COUNT(*) FROM reading_plans").fetchone()[0],
-            "active_plans": cursor.execute("SELECT COUNT(*) FROM reading_plans WHERE status = '进行中'").fetchone()[0],
-            "completed_plans": cursor.execute("SELECT COUNT(*) FROM reading_plans WHERE status = '已完成'").fetchone()[0]
-        }
-        
-        # 获取阅读状态分布
-        reading_status = cursor.execute("""
-            SELECT reading_status, COUNT(*) as count 
-            FROM books 
-            GROUP BY reading_status
-        """).fetchall()
-        
-        # 获取每月阅读计划数量
-        monthly_plans = cursor.execute("""
-            SELECT strftime('%Y-%m', start_date) as month, COUNT(*) as count 
-            FROM reading_plans 
-            GROUP BY month 
-            ORDER BY month DESC 
-            LIMIT 12
-        """).fetchall()
-        
-        # 获取每月购买图书数量
-        monthly_purchases = cursor.execute("""
-            SELECT strftime('%Y-%m', created_at) as month, COUNT(*) as count 
-            FROM books 
-            GROUP BY month 
-            ORDER BY month DESC 
-            LIMIT 12
-        """).fetchall()
-        
-        # 获取每月阅读完成数量
-        monthly_completions = cursor.execute("""
-            SELECT strftime('%Y-%m', updated_at) as month, COUNT(*) as count 
-            FROM books 
-            WHERE reading_status = '已读' 
-            GROUP BY month 
-            ORDER BY month DESC 
-            LIMIT 12
-        """).fetchall()
-        
-        return templates.TemplateResponse(
-            "statistics.html",
-            {
-                "request": request,
-                "stats": stats,
-                "reading_status": reading_status,
-                "monthly_plans": monthly_plans,
-                "monthly_purchases": monthly_purchases,
-                "monthly_completions": monthly_completions
-            }
-        )
-    except Exception as e:
-        logger.error(f"统计页面查询失败: {str(e)}")
-        # 如果发生错误，返回空数据
-        return templates.TemplateResponse(
-            "statistics.html",
-            {
-                "request": request,
-                "stats": {
-                    "total_books": 0,
-                    "read_books": 0,
-                    "reading_books": 0,
-                    "to_read_books": 0,
-                    "total_investment": 0,
-                    "avg_rating": 0,
-                    "total_plans": 0,
-                    "active_plans": 0,
-                    "completed_plans": 0
-                },
-                "reading_status": [],
-                "monthly_plans": [],
-                "monthly_purchases": [],
-                "monthly_completions": []
-            }
-        )
+        rows = conn.execute("SELECT title, author, reading_status, purchase_price FROM books WHERE owner_id=?",
+                            (user.id,)).fetchall()
+        for r in rows:
+            writer.writerow([r["title"], r["author"], r["reading_status"], r["purchase_price"]])
     finally:
-        conn.close() 
+        conn.close()
+    return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=books.csv"})

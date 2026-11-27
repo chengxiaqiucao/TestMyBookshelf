@@ -1,75 +1,21 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">添加新书</h5>
-                </div>
-                <div class="card-body">
-                    <form action="/books/add" method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">书名</label>
-                            <input type="text" class="form-control" id="title" name="title" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="author" class="form-label">作者</label>
-                            <input type="text" class="form-control" id="author" name="author" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="isbn" class="form-label">ISBN</label>
-                            <input type="text" class="form-control" id="isbn" name="isbn">
-                        </div>
-                        <div class="mb-3">
-                            <label for="publisher" class="form-label">出版社</label>
-                            <input type="text" class="form-control" id="publisher" name="publisher">
-                        </div>
-                        <div class="mb-3">
-                            <label for="publish_date" class="form-label">出版日期</label>
-                            <input type="date" class="form-control" id="publish_date" name="publish_date">
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">图书描述</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="reading_status" class="form-label">阅读状态</label>
-                            <select class="form-select" id="reading_status" name="reading_status">
-                                <option value="待读">待读</option>
-                                <option value="正在读">正在读</option>
-                                <option value="已读">已读</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_price" class="form-label">购买价格</label>
-                            <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price">
-                        </div>
-                        <div class="mb-3">
-                            <label for="category" class="form-label">分类</label>
-                            <input type="text" class="form-control" id="category" name="category">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_date" class="form-label">购买日期</label>
-                            <input type="date" class="form-control" id="purchase_date" name="purchase_date">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchaser" class="form-label">购买者</label>
-                            <input type="text" class="form-control" id="purchaser" name="purchaser">
-                        </div>
-                        <div class="mb-3">
-                            <label for="cover_image" class="form-label">封面图片</label>
-                            <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">添加图书</button>
-                            <a href="/books" class="btn btn-outline-secondary">取消</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %} 
+<h2>{{ t('action_add') }} {{ t('nav_books') }}</h2>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" action="/books/add" enctype="multipart/form-data" class="was-validated">
+ <div class="mb-3"><label>{{ t('book_title') }} *</label><input name="title" class="form-control" required></div>
+ <div class="mb-3"><label>{{ t('book_author') }} *</label><input name="author" class="form-control" required></div>
+ <div class="mb-3"><label>{{ t('book_publish_date') }}</label><input name="publish_date" type="date" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_purchase_date') }}</label><input name="purchase_date" type="date" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_purchaser') }}</label><input name="purchaser" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_price') }}</label><input name="purchase_price" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_category') }}</label><input name="category" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_desc') }}</label><textarea name="description" class="form-control"></textarea></div>
+ <div class="mb-3"><label>{{ t('book_cover') }}</label><input name="cover_image" type="file" accept="image/*" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_status') }}</label>
+  <select name="reading_status" class="form-select"><option>待读</option><option>正在读</option><option>已读</option></select></div>
+ <div class="mb-3"><label>{{ t('book_storage') }}</label>
+  <select name="storage_status" class="form-select"><option>在库</option><option>待购买</option><option>借入</option><option>借出</option><option>归档</option></select></div>
+ <button class="btn btn-primary">{{ t('action_save') }}</button>
+</form>
+{% endblock %}

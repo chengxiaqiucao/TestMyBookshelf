@@ -1,319 +1,144 @@
-from fastapi import APIRouter, Request, Query, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
-from app.models.database import get_db_connection
-from app.utils.helpers import format_datetime, format_price
-from typing import Optional
-import uuid
-import os
-from pathlib import Path
-import json
-from datetime import datetime
-from ..config import TEMPLATES_DIR
-import logging
+"""阅读计划（统一路由，修复 S1-F02/F03/F04、S1-R02/R03、S2-F09 靶点）。
 
-logger = logging.getLogger(__name__)
+S2-F09 靶点：WebSocket 推送的进度用未取整原始比例，与 HTTP 接口不同（在 ws.py 实现）。
+"""
+from fastapi import APIRouter, Request, Form, Query, HTTPException
+from fastapi.responses import RedirectResponse
+
+from ..models.database import get_db_connection
+from ..auth import require_user
+from ..templates_helpers import render
+from ..utils.i18n import resolve_lang
+
 router = APIRouter()
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-def row_to_dict(row, row_type='plan'):
-    """将数据库行转换为字典
-    
-    Args:
-        row: 数据库行数据
-        row_type: 行数据类型，'plan' 或 'book'
-    """
-    if row_type == 'plan':
-        return {
-            "id": row[0],
-            "book_id": row[1],
-            "description": row[2],
-            "start_date": row[3],
-            "end_date": row[4],
-            "status": row[5],
-            "priority": row[6],
-            "progress": row[7],
-            "planner": row[8],
-            "created_at": row[9],
-            "updated_at": row[10]
-        }
-    elif row_type == 'book':
-        return {
-            "id": row[0],
-            "title": row[1]
-        }
-    return None
 
-@router.get("/", response_class=HTMLResponse)
-async def plan_list(
-    request: Request,
-    page: int = Query(1, ge=1),
-    per_page: int = Query(10, ge=1, le=100)
-):
+def _sync_progress(conn, plan_id):
+    """S1-R02/R03：按任务完成比例更新进度，全部完成则计划状态改为已完成。"""
+    total = conn.execute("SELECT COUNT(*) FROM tasks WHERE plan_id=?", (plan_id,)).fetchone()[0]
+    done = conn.execute("SELECT COUNT(*) FROM tasks WHERE plan_id=? AND status='已完成'", (plan_id,)).fetchone()[0]
+    progress = round(done / total * 100) if total else 0
+    status = "已完成" if total and done == total else "进行中"
+    conn.execute("UPDATE reading_plans SET progress=?, status=?, updated_at=datetime('now') WHERE id=?",
+                 (progress, status, plan_id))
+
+
+@router.get("/")
+async def plan_list(request: Request, page: int = Query(1, ge=1)):
+    user = require_user(request)
+    lang = resolve_lang(request.cookies.get("lang"), user.lang)
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 获取所有书籍（用于添加计划时选择）
-    cursor.execute("SELECT id, title FROM books")
-    books = [row_to_dict(row, 'book') for row in cursor.fetchall()]
-    
-    # 获取总记录数
-    cursor.execute("SELECT COUNT(*) FROM reading_plans")
-    total_plans = cursor.fetchone()[0]
-    
-    # 计算总页数
-    total_pages = (total_plans + per_page - 1) // per_page
-    
-    # 获取当前页的数据
-    offset = (page - 1) * per_page
-    cursor.execute("""
-        SELECT p.*, b.title as book_title 
-        FROM reading_plans p
-        JOIN books b ON p.book_id = b.id
-        ORDER BY p.id DESC 
-        LIMIT ? OFFSET ?
-    """, (per_page, offset))
-    plans = cursor.fetchall()
-    
-    conn.close()
-    
-    return templates.TemplateResponse(
-        "plans.html",
-        {
-            "request": request,
-            "plans": plans,
-            "books": books,
-            "page": page,
-            "per_page": per_page,
-            "total_plans": total_plans,
-            "total_pages": total_pages
-        }
-    )
-
-@router.post("/add", response_class=RedirectResponse)
-async def add_plan(
-    book_id: int = Form(...),
-    description: str = Form(None),
-    start_date: str = Form(...),
-    end_date: str = Form(None),
-    status: str = Form("进行中"),
-    priority: str = Form("中"),
-    progress: int = Form(0),
-    planner: str = Form(...)
-):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
     try:
-        cursor.execute("""
-            INSERT INTO reading_plans (
-                book_id, description, start_date, end_date,
-                status, priority, progress, planner, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        """, (
-            book_id, description, start_date, end_date,
-            status, priority, progress, planner
-        ))
-        conn.commit()
-        return RedirectResponse(url="/plans", status_code=303)
-    except Exception as e:
-        logger.error(f"添加阅读计划失败: {str(e)}")
-        raise HTTPException(status_code=500, detail="添加阅读计划失败")
+        plans = conn.execute("""SELECT p.*, b.title AS book_title FROM reading_plans p
+            JOIN books b ON b.id=p.book_id WHERE p.owner_id=? ORDER BY p.id DESC LIMIT 20 OFFSET ?""",
+            (user.id, (page - 1) * 20)).fetchall()
+        books = conn.execute("SELECT id, title FROM books WHERE owner_id=?", (user.id,)).fetchall()
+        return render(request, "plans.html", {
+            "plans": [dict(p) for p in plans], "books": [dict(b) for b in books],
+            "lang": lang, "current_user": user})
     finally:
         conn.close()
 
-@router.post("/{plan_id}/update", response_class=RedirectResponse)
-async def update_plan(
-    plan_id: int,
-    book_id: int = Form(...),
-    description: str = Form(None),
-    start_date: str = Form(...),
-    end_date: str = Form(None),
-    status: str = Form(...),
-    priority: str = Form(...),
-    progress: int = Form(...),
-    planner: str = Form(...)
-):
+
+@router.get("/add")
+async def add_form(request: Request):
+    user = require_user(request)
+    lang = resolve_lang(request.cookies.get("lang"), user.lang)
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
     try:
-        cursor.execute("""
-            UPDATE reading_plans SET
-                book_id = ?,
-                description = ?,
-                start_date = ?,
-                end_date = ?,
-                status = ?,
-                priority = ?,
-                progress = ?,
-                planner = ?,
-                updated_at = datetime('now')
-            WHERE id = ?
-        """, (
-            book_id, description, start_date, end_date,
-            status, priority, progress, planner, plan_id
-        ))
-        conn.commit()
-        return RedirectResponse(url="/plans", status_code=303)
-    except Exception as e:
-        logger.error(f"更新阅读计划失败: {str(e)}")
-        raise HTTPException(status_code=500, detail="更新阅读计划失败")
+        books = conn.execute("SELECT id, title FROM books WHERE owner_id=?", (user.id,)).fetchall()
+        return render(request, "plan_add.html", {
+            "books": [dict(b) for b in books], "lang": lang, "current_user": user})
     finally:
         conn.close()
 
-@router.post("/{plan_id}/delete", response_class=RedirectResponse)
-async def delete_plan(plan_id: int):
+
+@router.post("/add")
+async def add_plan(request: Request, book_id: int = Form(...), planner: str = Form(...),
+                   description: str = Form(None), start_date: str = Form(...), end_date: str = Form(None),
+                   status: str = Form("进行中"), priority: str = Form("中"), progress: int = Form(0)):
+    user = require_user(request)
     conn = get_db_connection()
-    cursor = conn.cursor()
-    
     try:
-        cursor.execute("DELETE FROM reading_plans WHERE id = ?", (plan_id,))
+        conn.execute("""INSERT INTO reading_plans(book_id, planner, description, start_date, end_date,
+            status, priority, progress, owner_id) VALUES (?,?,?,?,?,?,?,?,?)""",
+            (book_id, planner, description, start_date, end_date, status, priority, progress, user.id))
         conn.commit()
-        return RedirectResponse(url="/plans", status_code=303)
-    except Exception as e:
-        logger.error(f"删除阅读计划失败: {str(e)}")
-        raise HTTPException(status_code=500, detail="删除阅读计划失败")
+    finally:
+        conn.close()
+    return RedirectResponse(url="/plans", status_code=303)
+
+
+@router.get("/{plan_id}")
+async def plan_detail(plan_id: int, request: Request):
+    user = require_user(request)
+    lang = resolve_lang(request.cookies.get("lang"), user.lang)
+    conn = get_db_connection()
+    try:
+        plan = conn.execute("""SELECT p.*, b.title AS book_title FROM reading_plans p
+            JOIN books b ON b.id=p.book_id WHERE p.id=? AND p.owner_id=?""", (plan_id, user.id)).fetchone()
+        if not plan:
+            raise HTTPException(404, "计划不存在")
+        tasks = conn.execute("SELECT * FROM tasks WHERE plan_id=? ORDER BY id", (plan_id,)).fetchall()
+        return render(request, "plan_detail.html", {
+            "plan": dict(plan), "tasks": [dict(t) for t in tasks], "lang": lang, "current_user": user})
     finally:
         conn.close()
 
-@router.get("/add", response_class=HTMLResponse)
-async def add_plan_form(request: Request):
-    """添加计划表单"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 获取所有书籍
-    cursor.execute("SELECT id, title FROM books")
-    books = [row_to_dict(row, 'book') for row in cursor.fetchall()]
-    
-    conn.close()
-    
-    return templates.TemplateResponse("plan_add.html", {
-        "request": request,
-        "books": books
-    })
-
-@router.get("/{plan_id}", response_class=HTMLResponse)
-async def plan_detail(request: Request, plan_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT p.*, b.title as book_title 
-        FROM reading_plans p
-        JOIN books b ON p.book_id = b.id
-        WHERE p.id = ?
-    """, (plan_id,))
-    plan = cursor.fetchone()
-    conn.close()
-    if not plan:
-        raise HTTPException(status_code=404, detail="阅读计划不存在")
-    return templates.TemplateResponse("plan_detail.html", {"request": request, "plan": plan})
-
-@router.get("/{plan_id}/json")
-async def get_plan_json(plan_id: int):
-    """获取计划的JSON数据"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 不使用JOIN，直接获取计划数据
-    cursor.execute("SELECT * FROM reading_plans WHERE id = ?", (plan_id,))
-    plan = cursor.fetchone()
-    conn.close()
-    
-    if not plan:
-        raise HTTPException(status_code=404, detail="阅读计划不存在")
-    
-    # 使用row_to_dict函数确保字段映射正确
-    plan_dict = row_to_dict(plan, 'plan')
-    return plan_dict
 
 @router.post("/{plan_id}/edit")
-async def edit_plan(
-    plan_id: int,
-    book_id: int = Form(...),
-    planner: str = Form(...),
-    description: str = Form(None),
-    start_date: str = Form(...),
-    end_date: str = Form(None),
-    status: str = Form(...),
-    priority: str = Form(...),
-    progress: int = Form(0)
-):
-    """编辑计划"""
+async def edit_plan(plan_id: int, request: Request, book_id: int = Form(...), planner: str = Form(...),
+                    description: str = Form(None), start_date: str = Form(...), end_date: str = Form(None),
+                    status: str = Form("进行中"), priority: str = Form("中"), progress: int = Form(0)):
+    user = require_user(request)
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            UPDATE reading_plans
-            SET book_id = ?, planner = ?, description = ?, start_date = ?,
-                end_date = ?, status = ?, priority = ?, progress = ?,
-                updated_at = datetime('now')
-            WHERE id = ?
-            """,
-            (
-                book_id, planner, description, start_date, end_date,
-                status, priority, progress, plan_id
-            )
-        )
+        conn.execute("""UPDATE reading_plans SET book_id=?, planner=?, description=?, start_date=?, end_date=?,
+            status=?, priority=?, progress=?, updated_at=datetime('now') WHERE id=? AND owner_id=?""",
+            (book_id, planner, description, start_date, end_date, status, priority, progress, plan_id, user.id))
         conn.commit()
+    finally:
         conn.close()
-        
-        return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)
-    except Exception as e:
-        logger.error(f"编辑阅读计划失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"编辑阅读计划失败: {str(e)}")
+    return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)
+
+
+@router.post("/{plan_id}/delete")
+async def delete_plan(plan_id: int, request: Request):
+    user = require_user(request)
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM reading_plans WHERE id=? AND owner_id=?", (plan_id, user.id))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse(url="/plans", status_code=303)
+
 
 @router.post("/{plan_id}/task/add")
-async def add_task(
-    plan_id: int,
-    description: str = Form(...),
-    start_time: str = Form(None),
-    end_time: str = Form(None),
-    executor: str = Form(None)
-):
-    """添加新任务"""
+async def add_task(plan_id: int, request: Request, title: str = Form(...), description: str = Form(None),
+                   due_date: str = Form(None), executor: str = Form(None), priority: str = Form("中")):
+    """S1-F02：统一写入 tasks 表。"""
+    user = require_user(request)
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            """
-            INSERT INTO plan_tasks (
-                plan_id, description, start_time, end_time,
-                status, executor
-            ) VALUES (?, ?, ?, ?, '未开始', ?)
-            """,
-            (plan_id, description, start_time, end_time, executor)
-        )
+        conn.execute("""INSERT INTO tasks(plan_id, title, description, due_date, executor, priority, owner_id)
+            VALUES (?,?,?,?,?,?,?)""", (plan_id, title, description, due_date, executor, priority, user.id))
+        _sync_progress(conn, plan_id)
         conn.commit()
+    finally:
         conn.close()
-        
-        return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)
-    except Exception as e:
-        logger.error(f"添加任务失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"添加任务失败: {str(e)}")
+    return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)
+
 
 @router.post("/{plan_id}/task/{task_id}/update")
-async def update_task_status(
-    plan_id: int,
-    task_id: int,
-    status: str = Form(...)
-):
-    """更新任务状态"""
+async def update_task(plan_id: int, task_id: int, request: Request, status: str = Form(...)):
+    user = require_user(request)
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "UPDATE plan_tasks SET status = ? WHERE id = ? AND plan_id = ?",
-            (status, task_id, plan_id)
-        )
+        conn.execute("UPDATE tasks SET status=?, updated_at=datetime('now') WHERE id=? AND plan_id=? AND owner_id=?",
+                     (status, task_id, plan_id, user.id))
+        _sync_progress(conn, plan_id)
         conn.commit()
+    finally:
         conn.close()
-        
-        return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)
-    except Exception as e:
-        logger.error(f"更新任务状态失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"更新任务状态失败: {str(e)}")
+    return RedirectResponse(url=f"/plans/{plan_id}", status_code=303)

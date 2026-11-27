@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ t('loan_history') }}</h2>
+<table class="table">
+<thead><tr><th>{{ t('book_title') }}</th><th>{{ t('loan_borrower') }}</th><th>{{ t('loan_date') }}</th>
+<th>{{ t('loan_due') }}</th><th>{{ t('loan_return') }}</th><th></th></tr></thead>
+<tbody>
+{% for l in loans %}
+<tr>
+ <td><a href="/books/{{ l.book_id }}">{{ l.title }}</a></td><td>{{ l.borrower }}</td>
+ <td>{{ fmt_date(l.loan_date) }}</td><td>{{ fmt_date(l.due_date) }}</td>
+ <td>{{ fmt_date(l.return_date) }}</td>
+ <td>{% if not l.return_date %}
+  {% if is_overdue(l) %}<span class="badge bg-danger">{{ t('loan_overdue') }}</span>{% endif %}
+  <form method="post" action="/loans/{{ l.id }}/return" class="d-inline">
+   <button class="btn btn-sm btn-success">{{ t('action_return') }}</button></form>
+ {% endif %}</td>
+</tr>
+{% else %}<tr><td colspan="6" class="text-muted">暂无借阅记录</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

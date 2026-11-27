@@ -1,92 +1,58 @@
-[![testing](https://img.shields.io/badge/topic-testing-blue)]()
-[![bug-hunting](https://img.shields.io/badge/topic-bug__hunting-red)]()
-[![python](https://img.shields.io/badge/topic-python-green)]()
+# 个人图书管理系统 - Sprint2
 
+测试练习项目：按 Scrum 迭代演进，每迭代一个分支，含功能改进与故意注入的测试靶点。
 
+## 当前版本（Sprint2）
 
-# 个人图书管理系统 - 我的书架
+- 用户系统：注册/登录、bcrypt 密码哈希、会话管理、数据隔离
+- 图书管理：CRUD、分页、模糊搜索、封面上传（UUID 文件名）
+- 借阅管理：借出/归还/超期标记/借阅历史
+- 阅读计划：计划与任务管理、进度自动联动
+- 统计：ECharts 图表、CSV 导出、24 小时热力图、WebSocket 实时推送
+- 中英文支持：界面双语、日期与货币本地化
 
-## 项目简介
+## 环境与启动
 
-这是一个用于测试练习的个人图书管理系统项目。该项目故意注入了一些典型的 Bug，用于测试人员练习 Bug 发现和验证。当前版本（Sprint 1）实现了图书管理的基本功能，包括图书信息的增删改查、封面图片上传、购买时间记录等，以及阅读计划的管理功能。
+Python 3.10+，依赖见 `requirements.txt`。
 
-## 当前版本功能
+```bash
+python -m venv .venv
+.venv/Scripts/activate        # Windows
+pip install -r requirements.txt
 
-- **图书管理**：支持添加、编辑、删除和查询图书信息，包括书名、作者、出版日期、购买时间、封面图片等。
-- **阅读计划**：支持创建和管理阅读计划，包括计划名称、描述、开始日期、结束日期、进度等。
-- **数据存储**：使用 SQLite 数据库存储图书和计划信息，数据库文件位于 `data/bookshelf.db`。
-- **示例数据**：提供示例数据初始化工具，方便测试和演示。
+# 必须设置 SECRET_KEY（缺失时应用拒绝启动）
+export SECRET_KEY=your-secret        # Linux/macOS
+set SECRET_KEY=your-secret           # Windows CMD
 
-## 技术栈
+python run.py
+```
 
-- **后端**：FastAPI (Python 3.10+)
-- **数据库**：SQLite
-- **前端**：Bootstrap 5 + Vanilla JS
-- **模板引擎**：Jinja2
+访问 `http://127.0.0.1:8000`，默认账号 `admin / admin123`（首次启动自动初始化）。
+
+可选环境变量：`CORS_ORIGINS`（逗号分隔白名单）、`DEBUG`、`ACCESS_TOKEN_EXPIRE_MINUTES`。
 
 ## 项目结构
 
 ```
-.
-├── main.py              # FastAPI应用入口（包含数据库操作）
-├── requirements.txt     # 项目依赖
-├── static/              # 静态资源
-│   └── style.css        # 样式文件
-├── templates/           # 模板文件
-│   ├── index.html       # 首页
-│   ├── add.html         # 添加页面
-│   └── edit.html        # 编辑页面
-├── data/                # 数据文件目录
-│   └── bookshelf.db     # SQLite数据库文件
-└── scripts/             # 辅助脚本
-    └── init_sample_data.py # 示例数据初始化脚本
+app/
+  main.py            应用入口
+  auth.py            认证与授权
+  config.py          配置（环境变量）
+  models/database.py 版本化迁移与数据访问
+  services/          统一统计服务
+  routers/           图书/计划/借阅/统计路由
+  utils/i18n.py      中英文与格式化
+  templates_helpers.py 模板渲染
+  ws.py              WebSocket 推送
+  templates/         Jinja2 模板
+migrations/          sprint1.sql / sprint2.sql（幂等迁移）
+scripts/             初始化脚本
+documents/           各迭代需求文档
+BUG_LIST.md          本地 Bug 清单（不推送远端）
 ```
-
-## 部署说明
-
-### 环境要求
-
-- Python 3.8 或更高版本
-- 依赖包：见 `requirements.txt`
-
-### 安装步骤
-
-1. 克隆项目到本地：
-   ```bash
-   git clone <项目仓库地址>
-   cd <项目目录>
-   ```
-
-2. 安装依赖：
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. 初始化数据库（可选，仅用于测试）：
-   ```bash
-   python scripts/init_sample_data.py
-   ```
-
-4. 启动应用：
-   ```bash
-   python run.py
-   ```
-
-5. 访问应用：
-   打开浏览器，访问 `http://localhost:8000`。
 
 ## 注意事项
 
-- **测试版本**：当前版本主要用于测试目的，包含一些已知的 bug，这些 bug 是故意注入的，用于测试系统的容错性和健壮性。
-- **数据安全**：请勿在生产环境中使用此版本，建议仅用于开发和测试。
-
-## 联系方式
-
-如有问题或建议，请联系项目维护者 
-
----
-
-注入的Bug清单可关注我的公众号：**秋草说测试**
-![秋草说测试](https://github.com/user-attachments/assets/bf1177a9-5eeb-4079-a118-a22fe2e511dd)
-
-欢迎大家提issue反馈更多发现更多Bug ^-^
+- 本项目为测试靶场，包含有意注入的故障；这些故障不安排修复，按 `BUG_LIST.md` 练习发现与验证。
+- 数据库位于 `data/bookshelf.db`，启动时幂等初始化，不清空已有数据。
+- Bug 清单仅存本地迭代分支，不得推送远端。

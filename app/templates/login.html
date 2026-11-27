@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ t('nav_login') }}</h2>
+<form method="post" action="/login">
+ <div class="mb-3"><label>用户名</label><input name="username" class="form-control" required></div>
+ <div class="mb-3"><label>密码</label><input name="password" type="password" class="form-control" required></div>
+ <button class="btn btn-primary">{{ t('nav_login') }}</button>
+</form>
+{% endblock %}

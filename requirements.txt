@@ -6,4 +6,4 @@ aiofiles==23.2.1
 python-jose==3.3.0
 passlib==1.7.4
 bcrypt==4.1.2
-werkzeug 
+websockets==12.0

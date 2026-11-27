@@ -1,86 +1,25 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">编辑图书</h5>
-                </div>
-                <div class="card-body">
-                    <form action="/books/{{ book[0] }}/update" method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="title" class="form-label">书名</label>
-                            <input type="text" class="form-control" id="title" name="title" value="{{ book[1] }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="author" class="form-label">作者</label>
-                            <input type="text" class="form-control" id="author" name="author" value="{{ book[2] }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="isbn" class="form-label">ISBN</label>
-                            <input type="text" class="form-control" id="isbn" name="isbn" value="{{ book[3] if book[3] and book[3] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="publisher" class="form-label">出版社</label>
-                            <input type="text" class="form-control" id="publisher" name="publisher" value="{{ book[4] if book[4] and book[4] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="publish_date" class="form-label">出版日期</label>
-                            <input type="date" class="form-control" id="publish_date" name="publish_date" 
-                                   value="{{ book[5] if book[5] and book[5] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">图书描述</label>
-                            <textarea class="form-control" id="description" name="description" rows="3">{{ book[6] if book[6] and book[6] != 'None' else '' }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="reading_status" class="form-label">阅读状态</label>
-                            <select class="form-select" id="reading_status" name="reading_status">
-                                <option value="待读" {% if book[8] == '待读' %}selected{% endif %}>待读</option>
-                                <option value="正在读" {% if book[8] == '正在读' %}selected{% endif %}>正在读</option>
-                                <option value="已读" {% if book[8] == '已读' %}selected{% endif %}>已读</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_price" class="form-label">购买价格</label>
-                            <input type="number" step="0.01" class="form-control" id="purchase_price" name="purchase_price" 
-                                   value="{{ book[9] if book[9] and book[9] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="category" class="form-label">分类</label>
-                            <input type="text" class="form-control" id="category" name="category" 
-                                   value="{{ book[10] if book[10] and book[10] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchase_date" class="form-label">购买日期</label>
-                            <input type="date" class="form-control" id="purchase_date" name="purchase_date" 
-                                   value="{{ book[11] if book[11] and book[11] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="purchaser" class="form-label">购买者</label>
-                            <input type="text" class="form-control" id="purchaser" name="purchaser" 
-                                   value="{{ book[12] if book[12] and book[12] != 'None' else '' }}">
-                        </div>
-                        <div class="mb-3">
-                            <label for="cover_image" class="form-label">封面图片</label>
-                            {% if book[7] and book[7] != 'None' %}
-                            <div class="mb-2">
-                                <img src="/static/{{ book[7] }}" alt="当前封面" class="img-thumbnail" style="max-height: 200px;">
-                            </div>
-                            {% endif %}
-                            <input type="file" class="form-control" id="cover_image" name="cover_image" accept="image/*">
-                            <small class="text-muted">上传新图片将替换当前封面</small>
-                        </div>
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">保存修改</button>
-                            <a href="/books/{{ book[0] }}" class="btn btn-outline-secondary">取消</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %} 
+<h2>{{ t('action_edit') }} {{ t('nav_books') }}</h2>
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+<form method="post" action="/books/{{ book.id }}/edit" enctype="multipart/form-data">
+ <div class="mb-3"><label>{{ t('book_title') }} *</label><input name="title" value="{{ book.title }}" class="form-control" required></div>
+ <div class="mb-3"><label>{{ t('book_author') }} *</label><input name="author" value="{{ book.author }}" class="form-control" required></div>
+ <div class="mb-3"><label>{{ t('book_publish_date') }}</label><input name="publish_date" value="{{ book.publish_date or '' }}" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_purchase_date') }}</label><input name="purchase_date" value="{{ book.purchase_date or '' }}" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_purchaser') }}</label><input name="purchaser" value="{{ book.purchaser or '' }}" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_price') }}</label><input name="purchase_price" value="{{ book.purchase_price or '' }}" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_category') }}</label><input name="category" value="{{ book.category or '' }}" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_desc') }}</label><textarea name="description" class="form-control">{{ book.description or '' }}</textarea></div>
+ <div class="mb-3"><label>{{ t('book_cover') }}</label><input name="cover_image" type="file" class="form-control"></div>
+ <div class="mb-3"><label>{{ t('book_status') }}</label>
+  <select name="reading_status" class="form-select">
+   {% for s in ['待读','正在读','已读'] %}<option {% if book.reading_status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select></div>
+ <div class="mb-3"><label>{{ t('book_storage') }}</label>
+  <select name="storage_status" class="form-select">
+   {% for s in ['在库','待购买','借入','借出','归档'] %}<option {% if book.storage_status==s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+  </select></div>
+ <button class="btn btn-primary">{{ t('action_save') }}</button>
+</form>
+{% endblock %}
